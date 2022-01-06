@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head lang="en">
+
+    <title>List orders</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen"/>
+
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
+            th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+
+    <link href="../static/css/spring-core.css"
+          th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
+</head>
+<body>
+<div class="container">
+
+    <div style="font-size: 30px">
+        <label >Date: </label>
+        <label th:text="${currentdate}"> </label>
+        <button class="btn btn-default" style="margin: 10px"><a href="/shipping/new-day">Next Day</a></button>
+
+    </div>
+
+
+    <div th:if="${#lists.isEmpty(orders)}">
+        <h3>No registered orders</h3>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(orders)}">
+        <div>
+            <h3 >Order List</h3>
+            <button class="btn btn-default" style="margin: 10px"><a href="/order/new">New Order</a></button>
+        </div>
+
+        <table class="table table-striped">
+            <!--            bootstrap class for table-->
+            <tr >
+                <th>Id<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                        <a href="/order/sort/byid">⇅</a></button>
+                </th>
+                <th>Destination<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/order/sort/bydestination">⇅</a></button>
+                </th>
+                <th>Order status<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/order/sort/byorderstatus">⇅</a></button>
+                </th>
+                <th>Delivery date<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/order/sort/bydeliverydate">⇅</a></button>
+                </th>
+                <th>Last updated<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/order/sort/bylastupdated">⇅</a></button>
+                </th>
+
+                <th>Details</th>
+                <th>Edit</th>
+                <th><button class="btn btn-default" style=" padding: 2px; height: 30px;font-size: 15px; text-align: center" >
+                    <a href="/order/?????????">Cancel selected</a></button>
+                </th>
+            </tr>
+            <tr th:each="order : ${orders}">
+                <!--                each iterator in thymeleaf-->
+                <td th:text="${order.id}"></td>
+                <td th:text="${order.orderDestination.destinationName}"></td>
+                <td th:text="${order.orderStatus}"></td>
+                <td th:text="${order.deliveryDate}"></td>
+                <td th:text="${order.lastUpDated}"></td>
+
+                <td><a th:href="${'/order/' + order.id}">View</a></td>
+                <td><a th:href="${'/order/edit/' + order.id}">Edit</a></td>
+                <td><input type="checkbox" name="checkedorders" th:value="${order.id}"/></td>
+
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
