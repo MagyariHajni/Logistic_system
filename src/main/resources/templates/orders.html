@@ -64,7 +64,7 @@
             <tr th:each="order : ${orders}">
                 <!--                each iterator in thymeleaf-->
                 <td th:text="${order.id}"></td>
-                <td th:text="${order.orderDestination.destinationName}"></td>
+                <td th:text="${order.orderDestinationEntity.destinationName}"></td>
                 <td th:text="${order.orderStatus}"></td>
                 <td th:text="${order.deliveryDate}"></td>
                 <td th:text="${order.lastUpDated}"></td>

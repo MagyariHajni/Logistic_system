@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-public class DeliveryOrder {
+public class DeliveryOrderEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,7 +12,7 @@ public class DeliveryOrder {
 
     @ManyToOne
     @JoinColumn(name = "DESTINATION_ID")
-    private Destination orderDestination;
+    private DestinationEntity orderDestinationEntity;
 
     private LocalDateTime deliveryDate;
     private OrderStatus orderStatus;
@@ -25,12 +25,12 @@ public class DeliveryOrder {
         this.id = id;
     }
 
-    public Destination getOrderDestination() {
-        return orderDestination;
+    public DestinationEntity getOrderDestination() {
+        return orderDestinationEntity;
     }
 
-    public void setOrderDestination(Destination orderDestination) {
-        this.orderDestination = orderDestination;
+    public void setOrderDestination(DestinationEntity orderDestinationEntity) {
+        this.orderDestinationEntity = orderDestinationEntity;
     }
 
     public LocalDateTime getDeliveryDate() {
