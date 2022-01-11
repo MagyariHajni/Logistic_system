@@ -2,6 +2,7 @@ package sci.java.logistic_system.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
@@ -24,7 +25,19 @@ public class DestinationService extends AbstractJpaDaoService{
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
+    public static ResponseEntity<DestinationEntity> updateDestination(DestinationService dest) {
+        return null;
+    }
 
+    public static ResponseEntity<DestinationEntity> addDestination(DestinationService dest) {
+        return null;
+    }
+    public static List<DestinationEntity> getAllDestinations(Long destinationId) {
+        return null;
+    }
+//    public static void deleteDestination(int destinationId) {
+//        DestinationRepository.findById(destinationId).ifPresent(DestinationRepository::delete);
+//    }
     public DestinationRepository getDestinationRepository() {
         return destinationRepository;
     }
