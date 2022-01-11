@@ -74,31 +74,24 @@ public class OrderController {
 
     @RequestMapping(value = "/order", method = RequestMethod.POST)
     public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order) {
+
         DeliveryOrderEntity savedOrder;
-        order.setLastUpDated(LocalDateTime.of(currentDate.toLocalDate(), LocalTime.now()));
-        savedOrder = deliveryOrderRepository.save(order);
+        if (!order.getDeliveryDate().isBefore(currentDate)) {
+            order.setLastUpDated(LocalDateTime.of(currentDate.toLocalDate(), LocalTime.now()));
+            savedOrder = deliveryOrderRepository.save(order);
 
-        OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
-        foundStatus.setOrderStatusDate(order.getLastUpDated());
-        orderStatusRepository.save(foundStatus);
+            if ((order.getOrderStatus() == OrderStatus.NEW) ) {
+                OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
+                foundStatus.setOrderStatusDate(order.getLastUpDated());
+                orderStatusRepository.save(foundStatus);
+            } else {
+                OrderStatusEntity savedOrderStatus = orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
 
-
-//        DeliveryOrderEntity savedOrder;
-//        if (!order.getDeliveryDate().isBefore(currentDate)) {
-//            order.setLastUpDated(LocalDateTime.of(currentDate.toLocalDate(), LocalTime.now()));
-//            savedOrder = deliveryOrderRepository.save(order);
-//
-//            if (order.getOrderStatus() == OrderStatus.NEW) {
-//                OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
-//                foundStatus.setOrderStatusDate(order.getLastUpDated());
-//                orderStatusRepository.save(foundStatus);
-//            } else {
-//                OrderStatusEntity savedOrderStatus = orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
-//            }
-//        } else {
-//            //TODO throw,console log, file log order couldn't be modified, delivery date before current date
-//            savedOrder = order;
-//        }
+            }
+        } else {
+            //TODO throw,console log, file log order couldn't be modified, delivery date before current date
+            savedOrder = order;
+        }
         return "redirect:order/" + savedOrder.getId();
     }
 
