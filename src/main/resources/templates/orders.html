@@ -26,7 +26,7 @@
 
     <div >
         <h3 style="display: inline">Order List</h3>
-        <button class="btn btn-default" style=" text-align:center;margin-bottom:10px"><a href="***TODO***/destination/list"><h3 style="margin:0px">Destinations list</h3></a></button>
+        <button class="btn btn-default" style=" text-align:center;margin-bottom:10px"><a href="/destination/list"><h3 style="margin:0px">Destinations list</h3></a></button>
     </div>
 
 
@@ -90,7 +90,7 @@
                 <td><a th:href="${'/order/' + order.id}">View</a></td>
                 <td><a th:href="${'/order/edit/' + order.id}">Edit</a></td>
 
-                <td><input type="checkbox" name="checkedorders" th:value="${order.id}" th:field="${selectedtocancel.selectedOrders}"/></td>
+                <td><input type="checkbox" /></td>
 
             </tr>
         </table>

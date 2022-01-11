@@ -12,6 +12,7 @@ import sci.java.logistic_system.domain.SelectedDeliveryOrders;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
+import sci.java.logistic_system.services.GlobalData;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -21,8 +22,12 @@ public class OrderController {
     DeliveryOrderRepository deliveryOrderRepository;
     DestinationRepository destinationRepository;
     OrderStatusRepository orderStatusRepository;
-    LocalDateTime currentDate;
+    GlobalData globalData;
 
+    @Autowired
+    public void setGlobalData(GlobalData globalData) {
+        this.globalData = globalData;
+    }
 
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
@@ -39,16 +44,11 @@ public class OrderController {
         this.orderStatusRepository = orderStatusRepository;
     }
 
-    @Autowired
-    public void setCurrentDate() {
-        this.currentDate = LocalDateTime.of(2021, 12, 15, 8, 0);
-    }
-
     @RequestMapping({"order/list", "order/"})
     public String listOrders(Model model) {
         model.addAttribute("orders", deliveryOrderRepository.findAll());
-        model.addAttribute("currentdate", currentDate.toLocalDate());
-        model.addAttribute("selectedtocancel", new SelectedDeliveryOrders());
+        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
+//        model.addAttribute("selectedtocancel", new SelectedDeliveryOrders());
         return "orders";
     }
 
@@ -59,7 +59,6 @@ public class OrderController {
                         deliveryOrderRepository.findById(id).get() : null);
 
         model.addAttribute("orderstatuses", orderStatusRepository.findOrderStatusesById(id));
-
         return "orderdetails";
     }
 
@@ -76,8 +75,8 @@ public class OrderController {
     public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order) {
 
         DeliveryOrderEntity savedOrder;
-        if (!order.getDeliveryDate().isBefore(currentDate)) {
-            order.setLastUpDated(LocalDateTime.of(currentDate.toLocalDate(), LocalTime.now()));
+        if (!order.getDeliveryDate().isBefore(globalData.getCurrentDate())) {
+            order.setLastUpDated(LocalDateTime.of(globalData.getCurrentDate().toLocalDate(), LocalTime.now()));
             savedOrder = deliveryOrderRepository.save(order);
 
             if ((order.getOrderStatus() == OrderStatus.NEW) ) {
@@ -86,7 +85,6 @@ public class OrderController {
                 orderStatusRepository.save(foundStatus);
             } else {
                 OrderStatusEntity savedOrderStatus = orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
-
             }
         } else {
             //TODO throw,console log, file log order couldn't be modified, delivery date before current date
@@ -108,26 +106,26 @@ public class OrderController {
                 if (!order.getOrderStatus().equals(OrderStatus.DELIVERED)
                         && !order.getOrderStatus().equals(OrderStatus.CANCELED)) {
                     order.setOrderStatus(OrderStatus.CANCELED);
-                    order.setLastUpDated(currentDate);
+                    order.setLastUpDated(globalData.getCurrentDate());
                     deliveryOrderRepository.save(order);
                     OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
                     orderStatusEntity.setOrderId(order.getId());
                     orderStatusEntity.setOrderStatus(OrderStatus.CANCELED);
-                    orderStatusEntity.setOrderStatusDate(currentDate);
+                    orderStatusEntity.setOrderStatusDate(globalData.getCurrentDate());
                     orderStatusRepository.save(orderStatusEntity);
                 }
             }
         }
         model.addAttribute("orders", deliveryOrderRepository.findAll());
-        model.addAttribute("currentdate", currentDate.toLocalDate());
+        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
         return "orders";
     }
 
     @RequestMapping({"/shipping/new-day"})
     public String newDay(Model model) {
-        currentDate = currentDate.plusDays(1);
+        globalData.setCurrentDate(globalData.getCurrentDate().plusDays(1));
         model.addAttribute("orders", deliveryOrderRepository.findAll());
-        model.addAttribute("currentdate", currentDate.toLocalDate());
+        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
         model.addAttribute("selectedtocancel", new SelectedDeliveryOrders());
         return "orders";
     }

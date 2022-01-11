@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head lang="en">
+
+    <title>List destinations</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen"/>
+
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
+            th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+
+    <link href="../static/css/spring-core.css"
+          th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
+</head>
+<body>
+<div class="container">
+
+    <div style="font-size: 30px">
+        <label >Date: </label>
+        <label th:text="${currentdate}"> </label>
+    </div>
+
+    <div >
+
+        <button class="btn btn-default" style=" text-align:center;margin-bottom:10px"><a href="/order/list"><h3 style="margin:0px">Orders list</h3></a></button>
+        <h3 style="display: inline">Destination List</h3>
+    </div>
+
+    <div th:if="${#lists.isEmpty(destinations)}">
+        <h3>We don't have available destinations</h3>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(destinations)}">
+        <div>
+            <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="/order/list">Add destination</a></button>
+
+        </div>
+        <table class="table table-striped">
+            <!--            bootstrap class for table-->
+            <tr>
+                <th>Id <button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/destination/sort/byid">⇅</a></button></th>
+                <th >Destination name <button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/destination/sort/bydestination">⇅</a></button></th>
+                </th>
+                <th>Distance</th>
+                <th>View</th>
+                <th>Modify</th>
+                <th>Delete</th>
+            </tr>
+            <tr th:each="destination : ${destinations}">
+                <!--                each iterator in thymeleaf-->
+                <td th:text="${destination.id}"></td>
+                <td th:text="${destination.destinationName}"></td>
+                <td th:text="${destination.distance}"></td>
+
+                <td><a th:href="${'/destination/' + destination.id}">View</a></td>
+                <td><a th:href="${'/destination/edit/' + destination.id}">Edit</a></td>
+                <td><a th:href="${'/destination/delete/' + destination.id}">Delete</a></td>
+            </tr>
+        </table>
+    </div>
+
+
+
+</div>
+
+</body>
+</html>
