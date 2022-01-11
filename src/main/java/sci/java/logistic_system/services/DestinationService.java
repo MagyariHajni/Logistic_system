@@ -1,17 +1,22 @@
 package sci.java.logistic_system.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Service;
+import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
+import sci.java.logistic_system.domain.OrderStatus;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 
+import javax.persistence.EntityManager;
 import java.io.BufferedReader;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @Service
-public class DestinationService {
+public class DestinationService extends AbstractJpaDaoService{
 
     private DestinationRepository destinationRepository;
 
@@ -20,6 +25,9 @@ public class DestinationService {
         this.destinationRepository = destinationRepository;
     }
 
+    public DestinationRepository getDestinationRepository() {
+        return destinationRepository;
+    }
 
     public void loadDestinations() {
         Path fileIn = new File("src/main/resources/destinations.csv").toPath();

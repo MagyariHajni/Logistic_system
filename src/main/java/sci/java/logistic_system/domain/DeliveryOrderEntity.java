@@ -1,5 +1,7 @@
 package sci.java.logistic_system.domain;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -12,8 +14,9 @@ public class DeliveryOrderEntity {
 
     @ManyToOne
     @JoinColumn(name = "DESTINATION_ID")
-    private DestinationEntity orderDestinationEntity;
+    private DestinationEntity orderDestination;
 
+    @DateTimeFormat(pattern="dd-MM-YYYY")
     private LocalDateTime deliveryDate;
     private OrderStatus orderStatus;
     private LocalDateTime lastUpDated;
@@ -26,17 +29,15 @@ public class DeliveryOrderEntity {
     }
 
     public DestinationEntity getOrderDestination() {
-        return orderDestinationEntity;
+        return orderDestination;
     }
-
-    public void setOrderDestination(DestinationEntity orderDestinationEntity) {
-        this.orderDestinationEntity = orderDestinationEntity;
+    public void setOrderDestination(DestinationEntity orderDestination) {
+        this.orderDestination = orderDestination;
     }
 
     public LocalDateTime getDeliveryDate() {
         return deliveryDate;
     }
-
     public void setDeliveryDate(LocalDateTime deliveryDate) {
         this.deliveryDate = deliveryDate;
     }
@@ -44,7 +45,6 @@ public class DeliveryOrderEntity {
     public OrderStatus getOrderStatus() {
         return orderStatus;
     }
-
     public void setOrderStatus(OrderStatus orderStatus) {
         this.orderStatus = orderStatus;
     }
@@ -52,7 +52,6 @@ public class DeliveryOrderEntity {
     public LocalDateTime getLastUpDated() {
         return lastUpDated;
     }
-
     public void setLastUpDated(LocalDateTime lastUpDated) {
         this.lastUpDated = lastUpDated;
     }

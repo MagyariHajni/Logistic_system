@@ -18,7 +18,6 @@ public class DestinationEntity {
     public Integer getId() {
         return id;
     }
-
     public void setId(Integer id) {
         this.id = id;
     }
@@ -26,7 +25,6 @@ public class DestinationEntity {
     public String getDestinationName() {
         return destinationName;
     }
-
     public void setDestinationName(String destinationName) {
         this.destinationName = destinationName;
     }
@@ -34,7 +32,6 @@ public class DestinationEntity {
     public int getDistance() {
         return distance;
     }
-
     public void setDistance(int distance) {
         this.distance = distance;
     }

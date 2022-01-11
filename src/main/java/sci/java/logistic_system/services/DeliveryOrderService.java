@@ -4,8 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.OrderStatus;
+import sci.java.logistic_system.domain.OrderStatusEntity;
+import sci.java.logistic_system.domain.SelectedDeliveryOrders;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
+import sci.java.logistic_system.domain.repository.OrderStatusRepository;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,9 +17,11 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 
 @Service
-public class DeliveryOrderService {
+public class DeliveryOrderService extends AbstractJpaDaoService {
+
     private DeliveryOrderRepository deliveryOrderRepository;
     private DestinationRepository destinationRepository;
+    private OrderStatusRepository orderStatusRepository;
 
 
     @Autowired
@@ -27,6 +32,16 @@ public class DeliveryOrderService {
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
+    }
+
+    @Autowired
+    public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
+        this.orderStatusRepository = orderStatusRepository;
+    }
+
+
+    public DeliveryOrderRepository getDeliveryOrderRepository() {
+        return deliveryOrderRepository;
     }
 
     public void loadInitialOrders() {
@@ -51,10 +66,30 @@ public class DeliveryOrderService {
                 order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
 
                 deliveryOrderRepository.save(order);
-//                orderStatusRepository.addOrderStatusUpdate(order.getId(),
-//                        LocalDateTime.of(2021, 12, 15, 8, 0),
-//                        OrderStatus.NEW);
+
+                OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
+                orderStatusEntity.setOrderId(order.getId());
+                orderStatusEntity.setOrderStatus(OrderStatus.NEW);
+                orderStatusEntity.setOrderStatusDate(LocalDateTime.of(2021, 12, 15, 8, 0));
+                orderStatusRepository.save(orderStatusEntity);
             }
+
+//            OrderStatusEntity ose1 = new OrderStatusEntity();
+//            ose1.setOrderId(1);
+//            ose1.setOrderStatus(OrderStatus.DELIVERING);
+//            ose1.setOrderStatusDate(LocalDateTime.of(2021, 12, 16, 8, 0));
+//            orderStatusRepository.save(ose1);
+//            OrderStatusEntity ose2 = new OrderStatusEntity();
+//            ose2.setOrderId(1);
+//            ose2.setOrderStatus(OrderStatus.DELIVERED);
+//            ose2.setOrderStatusDate(LocalDateTime.of(2021, 12, 16, 12, 0));
+//            orderStatusRepository.save(ose2);
+//            OrderStatusEntity ose3 = new OrderStatusEntity();
+//            ose3.setOrderId(5);
+//            ose3.setOrderStatus(OrderStatus.DELIVERING);
+//            ose3.setOrderStatusDate(LocalDateTime.of(2021, 12, 16, 17, 0));
+//            orderStatusRepository.save(ose3);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
