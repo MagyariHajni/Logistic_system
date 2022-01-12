@@ -27,9 +27,7 @@
 
             <div th:if="${order.orderStatus.name() == 'DELIVERED' or order.orderStatus.name() == 'CANCELED'}">
                 <h3>Order nr <span th:text="${id}"></span> is  <span th:text="${order.orderStatus}"></span>, cannot be modified.</h3>
-                <div class="row">
-                    <button class="btn btn-default"><a href="/order/list">Back to orders list</a></button>
-                </div>
+
             </div>
 
             <div th:if="${order.orderStatus.name() != 'DELIVERED' and order.orderStatus.name() != 'CANCELED'}">
@@ -70,6 +68,11 @@
                 </form>
             </div>
         </div>
+
+        <div class="row" style="margin-top:10px">
+            <button class="btn btn-default" ><a href="/order/list">Back to orders list</a></button>
+        </div>
+
     </div>
 </div>
 

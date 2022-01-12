@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.OrderStatus;
 import sci.java.logistic_system.domain.OrderStatusEntity;
-import sci.java.logistic_system.domain.SelectedDeliveryOrders;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
@@ -15,6 +14,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 public class DeliveryOrderService extends AbstractJpaDaoService {
@@ -38,7 +41,6 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
     }
-
 
     public DeliveryOrderRepository getDeliveryOrderRepository() {
         return deliveryOrderRepository;
@@ -73,25 +75,75 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                 orderStatusEntity.setOrderStatusDate(LocalDateTime.of(2021, 12, 15, 8, 0));
                 orderStatusRepository.save(orderStatusEntity);
             }
-
-//            OrderStatusEntity ose1 = new OrderStatusEntity();
-//            ose1.setOrderId(1);
-//            ose1.setOrderStatus(OrderStatus.DELIVERING);
-//            ose1.setOrderStatusDate(LocalDateTime.of(2021, 12, 16, 8, 0));
-//            orderStatusRepository.save(ose1);
-//            OrderStatusEntity ose2 = new OrderStatusEntity();
-//            ose2.setOrderId(1);
-//            ose2.setOrderStatus(OrderStatus.DELIVERED);
-//            ose2.setOrderStatusDate(LocalDateTime.of(2021, 12, 16, 12, 0));
-//            orderStatusRepository.save(ose2);
-//            OrderStatusEntity ose3 = new OrderStatusEntity();
-//            ose3.setOrderId(5);
-//            ose3.setOrderStatus(OrderStatus.DELIVERING);
-//            ose3.setOrderStatusDate(LocalDateTime.of(2021, 12, 16, 17, 0));
-//            orderStatusRepository.save(ose3);
-
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void modifyOrderDetails(DeliveryOrderEntity order, LocalDateTime date){
+        modifyOrderDetails(order,date,"");
+    }
+
+    public void modifyOrderDetails(DeliveryOrderEntity order, LocalDateTime date, String deletedDestinationName) {
+        order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+        DeliveryOrderEntity orderPreviousData = deliveryOrderRepository.findById(order.getId()).get();
+
+        if (order.getOrderDestination() == null) {
+            if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
+                order.setDestinationComment("Initial destination: " + deletedDestinationName + ", "
+                        + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                        + " Destination not available anymore");
+            } else {
+                order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
+                        + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                        + " Destination not available anymore");
+            }
+            order.setOrderStatus(OrderStatus.CANCELED);
+            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+        } else {
+            String initialComment = "Initial destination: " + orderPreviousData.getOrderDestination().getDestinationName();
+            if (!Objects.equals(order.getOrderDestination(), orderPreviousData.getOrderDestination())) {
+                if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
+                    order.setDestinationComment(initialComment + ", "
+                            + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                            + " Changed destination: "
+                            + order.getOrderDestination().getDestinationName());
+                } else {
+                    order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
+                            + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                            + " Changed destination: " + order.getOrderDestination().getDestinationName());
+                }
+            }
+
+            if ((order.getOrderStatus() == orderPreviousData.getOrderStatus())) {
+                OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
+                foundStatus.setOrderStatusDate(order.getLastUpDated());
+                orderStatusRepository.save(foundStatus);
+            } else {
+                orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+            }
+
+            if (Objects.equals(order.getDestinationComment(), "")) {
+                order.setDestinationComment(orderPreviousData.getDestinationComment());
+            }
+        }
+
+        deliveryOrderRepository.save(order);
+    }
+
+    public void cancelSelectedOrders(List<DeliveryOrderEntity> ordersToCancel, LocalDateTime date) {
+        for (DeliveryOrderEntity order : ordersToCancel) {
+            if (!order.getOrderStatus().equals(OrderStatus.DELIVERED)
+                    && !order.getOrderStatus().equals(OrderStatus.CANCELED)) {
+                order.setOrderStatus(OrderStatus.CANCELED);
+                order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+                deliveryOrderRepository.save(order);
+                OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
+                orderStatusEntity.setOrderId(order.getId());
+                orderStatusEntity.setOrderStatus(OrderStatus.CANCELED);
+                orderStatusEntity.setOrderStatusDate(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+                orderStatusRepository.save(orderStatusEntity);
+            }
         }
     }
 

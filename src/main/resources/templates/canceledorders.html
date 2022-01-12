@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head lang="en">
+
+    <title>List canceled orders</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen"/>
+
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
+            th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+
+    <link href="../static/css/spring-core.css"
+          th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
+</head>
+<body>
+<div class="container">
+
+    <div style="font-size: 30px">
+        <label>Date: </label>
+        <label th:text="${currentdate}"> </label>
+    </div>
+
+    <div th:if="${#lists.isEmpty(canceledorders)}">
+        <h3>You have not selected existing orders to cancel.</h3>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(canceledorders)}">
+        <h3>You have canceled the following orders:</h3>
+        <ul >
+            <li th:each="order : ${canceledorders}">
+                <h4>Order nr <span th:text="${order.id}"></span></h4>
+            </li>
+        </ul>
+
+
+    </div>
+
+    <div class="row">
+        <button class="btn btn-default"><a href="/order/list">Back to orders list</a></button>
+    </div>
+
+
+</div>
+
+</body>
+</html>

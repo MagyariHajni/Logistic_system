@@ -8,7 +8,7 @@ import java.util.List;
 
 public class SelectedDeliveryOrders {
 
-    private List<DeliveryOrderEntity> selectedOrders = new ArrayList<>();
+    private List<DeliveryOrderEntity> selectedOrders;
 
     public List<DeliveryOrderEntity> getSelectedOrders() {
         return selectedOrders;

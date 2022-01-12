@@ -18,83 +18,110 @@
 <body>
 <div class="container">
 
-    <div style="font-size: 30px">
-        <label >Date: </label>
-        <label th:text="${currentdate}"> </label>
-        <button class="btn btn-default" style="margin: 10px"><a href="/shipping/new-day">Next Day</a></button>
-    </div>
 
-    <div >
-        <h3 style="display: inline">Order List</h3>
-        <button class="btn btn-default" style=" text-align:center;margin-bottom:10px"><a href="/destination/list"><h3 style="margin:0px">Destinations list</h3></a></button>
-    </div>
-
-
-    <div th:if="${#lists.isEmpty(orders)}">
-        <h3>No registered orders</h3>
-        <button class="btn btn-default" style="margin: 10px"><a href="***TODO***/order/new">Add Orders</a></button>
-    </div>
-
-    <div th:if="${not #lists.isEmpty(orders)}">
-        <div>
-
-            <div>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="/order/list">All orders</a></button>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">List today</a></button>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">Cancel selected</a></button>
-            </div>
-            <div>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***/order/new">Add orders</a></button>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">Ship today</a></button>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">Ship selected</a></button>
-
-            </div>
-
+        <div style="font-size: 30px">
+            <label>Date: </label>
+            <label th:text="${currentdate}"> </label>
+            <button class="btn btn-default" style="margin: 10px"><a href="/shipping/new-day">Next Day</a></button>
         </div>
 
-        <table class="table table-striped">
-            <!--            bootstrap class for table-->
-            <tr >
-                <th>Id<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                        <a href="/order/sort/byid">⇅</a></button>
-                </th>
-                <th>Destination<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                    <a href="/order/sort/bydestination">⇅</a></button>
-                </th>
-                <th>Order status<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                    <a href="/order/sort/byorderstatus">⇅</a></button>
-                </th>
-                <th>Delivery date<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                    <a href="/order/sort/bydeliverydate">⇅</a></button>
-                </th>
-                <th>Last updated<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                    <a href="/order/sort/bylastupdated">⇅</a></button>
-                </th>
-
-                <th>Details</th>
-                <th>Edit</th>
-                <th>Select</th>
-
-            </tr>
-            <tr th:each="order : ${orders}">
-                <!--                each iterator in thymeleaf-->
-                <td th:text="${order.id}"></td>
-                <td th:text="${order.orderDestination.destinationName}"></td>
-                <td th:text="${order.orderStatus}"></td>
+        <div>
+            <h3 style="display: inline">Order List</h3>
+            <button class="btn btn-default" style=" text-align:center;margin-bottom:10px"><a href="/destinations/list" style="text-decoration:none">
+                <h3 style="margin:0px">Destinations list</h3></a></button>
+        </div>
 
 
-                <td th:text="${#temporals.format(order.deliveryDate, 'dd-MM-yyyy')}"></td>
-                <td th:text="${#temporals.format(order.lastUpDated, 'dd-MM-yyyy HH:mm')}"></td>
+        <div th:if="${#lists.isEmpty(orders)}">
+            <h3>No registered orders</h3>
+            <button class="btn btn-default" style="margin: 10px"><a href="***TODO***/order/new">Add Orders</a></button>
+        </div>
 
 
-                <td><a th:href="${'/order/' + order.id}">View</a></td>
-                <td><a th:href="${'/order/edit/' + order.id}">Edit</a></td>
+        <div th:if="${not #lists.isEmpty(orders)}">
+            <div>
+                <div>
+                    <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="/order/list">All
+                        orders</a></button>
+                    <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">List
+                        today</a></button>
 
-                <td><input type="checkbox" /></td>
+                </div>
+                <div>
+                    <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a
+                            href="***TODO***/order/new">Add
+                        orders</a></button>
+                    <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">Ship
+                        today</a></button>
 
-            </tr>
-        </table>
-    </div>
+                </div>
+            </div>
+
+            <form th:object="${selectedlist}" method="post" th:action="@{/order/cancel}" autocomplete="off">
+
+                <div class="text-right" style="color:#333">
+                <button class="btn btn-default" style="width: 120px;margin-bottom:10px; color:#333" type="submit">
+                    Cancel selected
+                </button>
+                </div>
+
+            <table class="table table-striped">
+                <!--            bootstrap class for table-->
+                <tr>
+                    <th>Id
+                        <button class="btn btn-default"
+                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
+                            <a href="/order/sort/byid">⇅</a></button>
+                    </th>
+                    <th>Destination
+                        <button class="btn btn-default"
+                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
+                            <a href="/order/sort/bydestination">⇅</a></button>
+                    </th>
+                    <th>Order status
+                        <button class="btn btn-default"
+                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
+                            <a href="/order/sort/byorderstatus">⇅</a></button>
+                    </th>
+                    <th>Delivery date
+                        <button class="btn btn-default"
+                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
+                            <a href="/order/sort/bydeliverydate">⇅</a></button>
+                    </th>
+                    <th>Last updated
+                        <button class="btn btn-default"
+                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
+                            <a href="/order/sort/bylastupdated">⇅</a></button>
+                    </th>
+
+                    <th>Details</th>
+                    <th>Edit</th>
+                    <th>Select</th>
+
+                </tr>
+
+                <tr th:each="order : ${orders}">
+                    <td th:text="${order.id}"></td>
+                    <div th:if="${order.orderDestination} != null">
+                        <td th:text="${order.orderDestination.destinationName}"></td>
+                    </div>
+                    <div th:if="${order.orderDestination} == null">
+                        <td th:text="${order.destinationComment}"></td>
+                    </div>
+
+                    <td th:text="${order.orderStatus}"></td>
+                    <td th:text="${#temporals.format(order.deliveryDate, 'dd-MM-yyyy')}"></td>
+                    <td th:text="${#temporals.format(order.lastUpDated, 'dd-MM-yyyy HH:mm')}"></td>
+                    <td><a th:href="${'/order/' + order.id}">View</a></td>
+                    <td><a th:href="${'/order/edit/' + order.id}">Edit</a></td>
+
+                    <td><input type="checkbox" th:field="*{selectedOrders}" th:value="${order.id}" /></td>
+                </tr>
+
+            </table>
+            </form>
+        </div>
+
 
 </div>
 

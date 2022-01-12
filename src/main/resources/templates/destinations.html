@@ -35,18 +35,19 @@
 
     <div th:if="${not #lists.isEmpty(destinations)}">
         <div>
-            <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="/order/list">Add destination</a></button>
+            <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="/destinations/add">Add destination</a></button>
 
         </div>
         <table class="table table-striped">
             <!--            bootstrap class for table-->
             <tr>
                 <th>Id <button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                    <a href="/destination/sort/byid">⇅</a></button></th>
+                    <a href="/destinations/sort/byid">⇅</a></button></th>
                 <th >Destination name <button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
-                    <a href="/destination/sort/bydestination">⇅</a></button></th>
+                    <a href="/destinations/sort/byname">⇅</a></button>
                 </th>
-                <th>Distance</th>
+                <th>Distance<button class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left" >
+                    <a href="/destinations/sort/bydistance">⇅</a></button></th>
                 <th>View</th>
                 <th>Modify</th>
                 <th>Delete</th>
@@ -57,9 +58,9 @@
                 <td th:text="${destination.destinationName}"></td>
                 <td th:text="${destination.distance}"></td>
 
-                <td><a th:href="${'/destination/' + destination.id}">View</a></td>
-                <td><a th:href="${'/destination/edit/' + destination.id}">Edit</a></td>
-                <td><a th:href="${'/destination/delete/' + destination.id}">Delete</a></td>
+                <td><a th:href="${'/destinations/' + destination.id}">View</a></td>
+                <td><a th:href="${'/destinations/edit/' + destination.id}">Edit</a></td>
+                <td><a th:href="${'/destinations/delete/' + destination.id}">Delete</a></td>
             </tr>
         </table>
     </div>

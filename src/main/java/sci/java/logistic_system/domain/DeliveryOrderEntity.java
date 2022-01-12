@@ -20,6 +20,14 @@ public class DeliveryOrderEntity {
     private LocalDateTime deliveryDate;
     private OrderStatus orderStatus;
     private LocalDateTime lastUpDated;
+    private String destinationComment ="";
+
+    public String getDestinationComment() {
+        return destinationComment;
+    }
+    public void setDestinationComment(String destinationComment) {
+        this.destinationComment = destinationComment;
+    }
 
     public Integer getId() {
         return id;

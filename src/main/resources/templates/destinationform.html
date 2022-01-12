@@ -16,25 +16,29 @@
 </head>
 <body>
 <div class="container">
+    <div th:if="${id != null}">
+        <h2>Destination nr <span th:text="${id}"></span> details</h2>
+    </div>
 
-    <h2>Destination nr <span th:text="${id}"></span> details</h2>
+    <div th:if="${id == null}">
+        <h2>New destination details</h2>
+    </div>
+
     <div>
-        <div th:if="${destination == null}">
-            <h3>Destination nr <span th:text="${id}"></span> doesn't exist</h3>
+        <div th:if="(${destination == null}) and (${id != null})">
+                <h3>Destination nr <span th:text="${id}"></span> doesn't exist</h3>
         </div>
 
         <div th:if="${destination != null}">
 
-            <form class="form-horizontal" th:object="${destination}" th:action="@{/destination}" method="post">
+            <form class="form-horizontal" th:object="${destination}" th:action="@{/destinations}" method="post">
 
                 <input type="hidden" th:field="*{id}"/>
 
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Destination name:</label>
                     <div class="col-sm-4">
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control" th:field="*{destinationName}"/>
-                        </div>
+                        <input type="text" class="form-control" th:field="*{destinationName}"/>
                     </div>
                 </div>
                 <div class="form-group">
@@ -49,6 +53,11 @@
                 </div>
             </form>
         </div>
+
+        <div class="row" style="margin-top:10px">
+            <button class="btn btn-default" ><a href="/destinations/list">Back to destinations list</a></button>
+        </div>
+
 
     </div>
 </div>
