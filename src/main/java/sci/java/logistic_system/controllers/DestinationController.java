@@ -10,7 +10,6 @@ import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
-import sci.java.logistic_system.domain.repository.OrderStatusRepository;
 import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.GlobalData;
 
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 public class DestinationController {
     DestinationRepository destinationRepository;
     DeliveryOrderRepository deliveryOrderRepository;
-    private OrderStatusRepository orderStatusRepository;
     private GlobalData globalData;
     private DeliveryOrderService deliveryOrderService;
 
@@ -43,11 +41,6 @@ public class DestinationController {
     }
 
     @Autowired
-    public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
-        this.orderStatusRepository = orderStatusRepository;
-    }
-
-    @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
     }
@@ -55,7 +48,7 @@ public class DestinationController {
     @GetMapping({"destinations/list", "destinations/"})
     public String listDestinations(Model model) {
         model.addAttribute("destinations", destinationRepository.findAll());
-        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
+        globalData.setCommonModelAttributes(model);
         return "destinations";
     }
 
@@ -80,13 +73,19 @@ public class DestinationController {
         return "destinationform";
     }
 
-
     @PostMapping(value = "/destinations")
     public String saveOrUpdateDestination(DestinationEntity destination) {
-
+        List<String> destinationNameList = destinationRepository.getAvailableDestinations();
+        String newDestinationName = destination.getDestinationName().substring(0, 1).toUpperCase()
+                + destination.getDestinationName().substring(1).toLowerCase();
         if ((!Objects.equals(destination.getDestinationName(), "")) && (!Objects.equals(destination.getDistance(), ""))) {
-            DestinationEntity savedDestination = destinationRepository.save(destination);
-            return "redirect:destinations/" + savedDestination.getId();
+            if (destinationNameList.contains(newDestinationName)) {
+//    TODO log+file destination couldn't be saved because it already exists
+                return "redirect:destinations/";
+            } else {
+                DestinationEntity savedDestination = destinationRepository.save(destination);
+                return "redirect:destinations/" + savedDestination.getId();
+            }
         } else {
             //TODO  log+file destination couldn't be saved
             return "redirect:destinations/";
@@ -105,9 +104,7 @@ public class DestinationController {
                     .collect(Collectors.toList());
 
             for (DeliveryOrderEntity order : ordersWithDestinationToDelete) {
-                String deletedDestinationName = order.getOrderDestination().getDestinationName();
-                order.setOrderDestination(null);
-                deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate(),deletedDestinationName);
+                deliveryOrderService.deleteOrderDestination(order, globalData.getCurrentDate());
             }
 
         } else {

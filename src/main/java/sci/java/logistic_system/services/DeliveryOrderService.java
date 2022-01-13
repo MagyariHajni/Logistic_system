@@ -51,84 +51,89 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
             String line;
-
             while ((line = reader.readLine()) != null) {
-                String[] inputData = line.split(",");
-                String[] deliveryDate = inputData[1].split("-");
-
-                DeliveryOrderEntity order = new DeliveryOrderEntity();
-
-                order.setOrderDestination(destinationRepository.findDestinationEntityByDestinationName(inputData[0]));
-                order.setDeliveryDate(LocalDateTime.of(
-                        Integer.parseInt(deliveryDate[2]),
-                        Integer.parseInt(deliveryDate[1]),
-                        Integer.parseInt(deliveryDate[0]),
-                        8, 0));
-                order.setOrderStatus(OrderStatus.NEW);
-                order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
-
-                deliveryOrderRepository.save(order);
-
-                OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
-                orderStatusEntity.setOrderId(order.getId());
-                orderStatusEntity.setOrderStatus(OrderStatus.NEW);
-                orderStatusEntity.setOrderStatusDate(LocalDateTime.of(2021, 12, 15, 8, 0));
-                orderStatusRepository.save(orderStatusEntity);
+                DeliveryOrderEntity order = convertAndSaveOrder(line);
+                orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.NEW, LocalDateTime.of(2021, 12, 15, 8, 0));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void modifyOrderDetails(DeliveryOrderEntity order, LocalDateTime date){
-        modifyOrderDetails(order,date,"");
+    public void deleteOrderDestination(DeliveryOrderEntity order, LocalDateTime date) {
+        String deletedDestinationName = order.getOrderDestination().getDestinationName();
+        DeliveryOrderEntity orderPreviousData = deliveryOrderRepository.findById(order.getId()).get();
+        order.setOrderDestination(null);
+        modifyOrderDetails(order, orderPreviousData, date, deletedDestinationName);
+
     }
 
-    public void modifyOrderDetails(DeliveryOrderEntity order, LocalDateTime date, String deletedDestinationName) {
-        order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+    public void modifyOrderDetails(DeliveryOrderEntity order, LocalDateTime date) {
         DeliveryOrderEntity orderPreviousData = deliveryOrderRepository.findById(order.getId()).get();
+        modifyOrderDetails(order, orderPreviousData, date, "");
+    }
+
+    public void modifyOrderDetails(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date, String deletedDestinationName) {
+        order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
 
         if (order.getOrderDestination() == null) {
+            modifyOrderWithDeletedDestination(order, orderPreviousData, date, deletedDestinationName);
+        } else {
+            modifyOrderWithChangedDestination(order, orderPreviousData, date);
+            modifyOrderStatusAndComment(order, orderPreviousData);
+        }
+        deliveryOrderRepository.save(order);
+    }
+
+    public void modifyOrderWithDeletedDestination(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date, String deletedDestinationName) {
+        if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
+            order.setDestinationComment("Initial destination: " + deletedDestinationName + ", "
+                    + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    + " Destination not available anymore");
+        } else {
+            order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
+                    + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    + " Destination not available anymore");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.CANCELED) {
+            OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
+            foundStatus.setOrderStatusDate(order.getLastUpDated());
+            orderStatusRepository.save(foundStatus);
+        } else {
+            order.setOrderStatus(OrderStatus.CANCELED);
+            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+        }
+    }
+
+    public void modifyOrderWithChangedDestination(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date) {
+        String initialComment = "Initial destination: " + orderPreviousData.getOrderDestination().getDestinationName();
+        if (!Objects.equals(order.getOrderDestination(), orderPreviousData.getOrderDestination())) {
             if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
-                order.setDestinationComment("Initial destination: " + deletedDestinationName + ", "
+                order.setDestinationComment(initialComment + ", "
                         + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                        + " Destination not available anymore");
+                        + " Changed destination: "
+                        + order.getOrderDestination().getDestinationName());
             } else {
                 order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
                         + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                        + " Destination not available anymore");
-            }
-            order.setOrderStatus(OrderStatus.CANCELED);
-            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
-        } else {
-            String initialComment = "Initial destination: " + orderPreviousData.getOrderDestination().getDestinationName();
-            if (!Objects.equals(order.getOrderDestination(), orderPreviousData.getOrderDestination())) {
-                if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
-                    order.setDestinationComment(initialComment + ", "
-                            + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                            + " Changed destination: "
-                            + order.getOrderDestination().getDestinationName());
-                } else {
-                    order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
-                            + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                            + " Changed destination: " + order.getOrderDestination().getDestinationName());
-                }
-            }
-
-            if ((order.getOrderStatus() == orderPreviousData.getOrderStatus())) {
-                OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
-                foundStatus.setOrderStatusDate(order.getLastUpDated());
-                orderStatusRepository.save(foundStatus);
-            } else {
-                orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
-            }
-
-            if (Objects.equals(order.getDestinationComment(), "")) {
-                order.setDestinationComment(orderPreviousData.getDestinationComment());
+                        + " Changed destination: " + order.getOrderDestination().getDestinationName());
             }
         }
+    }
 
-        deliveryOrderRepository.save(order);
+    public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData) {
+        if ((order.getOrderStatus() == orderPreviousData.getOrderStatus())) {
+            OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
+            foundStatus.setOrderStatusDate(order.getLastUpDated());
+            orderStatusRepository.save(foundStatus);
+        } else {
+            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+        }
+
+        if (Objects.equals(order.getDestinationComment(), "")) {
+            order.setDestinationComment(orderPreviousData.getDestinationComment());
+        }
     }
 
     public void cancelSelectedOrders(List<DeliveryOrderEntity> ordersToCancel, LocalDateTime date) {
@@ -145,6 +150,24 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                 orderStatusRepository.save(orderStatusEntity);
             }
         }
+    }
+
+    public DeliveryOrderEntity convertAndSaveOrder(String input) {
+        String[] inputData = input.split(",");
+        String[] deliveryDate = inputData[1].split("-");
+
+        DeliveryOrderEntity order = new DeliveryOrderEntity();
+
+        order.setOrderDestination(destinationRepository.findDestinationEntityByDestinationName(inputData[0]));
+        order.setDeliveryDate(LocalDateTime.of(
+                Integer.parseInt(deliveryDate[2]),
+                Integer.parseInt(deliveryDate[1]),
+                Integer.parseInt(deliveryDate[0]),
+                8, 0));
+        order.setOrderStatus(OrderStatus.NEW);
+        order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
+        deliveryOrderRepository.save(order);
+        return order;
     }
 
 

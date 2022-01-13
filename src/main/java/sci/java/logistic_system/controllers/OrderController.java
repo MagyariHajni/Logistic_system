@@ -56,10 +56,8 @@ public class OrderController {
 
     @GetMapping(value = {"order/list", "order/"})
     public String listOrders(Model model) {
-        model.addAttribute("selectedlist", new SelectedDeliveryOrders());
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
-        model.addAttribute("orders", globalData.getCurrentViewOrderList());
-        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
+        globalData.setCommonModelAttributes(model);
         return "orders";
     }
 
@@ -76,8 +74,8 @@ public class OrderController {
     public String editOrder(@PathVariable Integer id, Model model) {
         model.addAttribute("order", deliveryOrderRepository.findById(id).isPresent() ?
                 deliveryOrderRepository.findById(id).get() : null);
+        globalData.setCommonModelAttributes(model);
         model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
-        model.addAttribute("statuses", OrderStatus.values());
         return "orderform";
     }
 
@@ -102,7 +100,7 @@ public class OrderController {
             deliveryOrderService.cancelSelectedOrders(ordersToCancel,globalData.getCurrentDate());
             model.addAttribute("canceledorders", ordersToCancel);
         }
-        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
+        globalData.setCommonModelAttributes(model);
         return "canceledorders";
     }
 
@@ -110,9 +108,7 @@ public class OrderController {
     public String newDay(Model model) {
         globalData.setCurrentDate(globalData.getCurrentDate().plusDays(1));
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
-        model.addAttribute("orders", globalData.getCurrentViewOrderList());
-        model.addAttribute("currentdate", globalData.getCurrentDate().toLocalDate());
-        model.addAttribute("selectedlist", new SelectedDeliveryOrders());
+        globalData.setCommonModelAttributes(model);
         return "orders";
     }
 

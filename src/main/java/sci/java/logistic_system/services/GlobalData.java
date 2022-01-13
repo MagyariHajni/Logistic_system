@@ -1,8 +1,12 @@
 package sci.java.logistic_system.services;
 
 import org.springframework.stereotype.Component;
+import org.springframework.ui.Model;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
+import sci.java.logistic_system.domain.OrderStatus;
+import sci.java.logistic_system.domain.SelectedDeliveryOrders;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
+import sci.java.logistic_system.domain.repository.DestinationRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,7 +30,6 @@ public class GlobalData {
     public List<DeliveryOrderEntity> getCurrentViewOrderList() {
         return currentViewOrderList;
     }
-
     public void setCurrentViewOrderList(List<DeliveryOrderEntity> currentViewOrderList) {
         this.currentViewOrderList = currentViewOrderList;
     }
@@ -36,5 +39,12 @@ public class GlobalData {
     }
     public void setProfitByDayMap(Map<LocalDateTime, Integer> profitByDayMap) {
         this.profitByDayMap = profitByDayMap;
+    }
+
+    public void setCommonModelAttributes(Model model){
+        model.addAttribute("selectedlist", new SelectedDeliveryOrders());
+        model.addAttribute("orders", getCurrentViewOrderList());
+        model.addAttribute("currentdate", getCurrentDate().toLocalDate());
+        model.addAttribute("statuses", OrderStatus.values());
     }
 }
