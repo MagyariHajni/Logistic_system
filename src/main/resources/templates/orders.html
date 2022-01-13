@@ -20,9 +20,11 @@
 
 
         <div style="font-size: 30px">
+            <button class="btn btn-default" style="margin: 10px"><a href="/shipping/previous-day">Previous Day</a></button>
             <label>Date: </label>
             <label th:text="${currentdate}"> </label>
             <button class="btn btn-default" style="margin: 10px"><a href="/shipping/new-day">Next Day</a></button>
+
         </div>
 
         <div>
@@ -34,7 +36,7 @@
 
         <div th:if="${#lists.isEmpty(orders)}">
             <h3>No registered orders</h3>
-            <button class="btn btn-default" style="margin: 10px"><a href="***TODO***/order/new">Add Orders</a></button>
+            <button class="btn btn-default" style="margin: 10px"><a href="/add/orders">Add Orders</a></button>
         </div>
 
 

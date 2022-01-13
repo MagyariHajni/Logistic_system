@@ -2,8 +2,9 @@ package sci.java.logistic_system.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import sci.java.logistic_system.config.OrderConverter;
+import sci.java.logistic_system.config.OrderReq;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
-import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.OrderStatus;
 import sci.java.logistic_system.domain.OrderStatusEntity;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
@@ -16,6 +17,13 @@ import java.util.stream.Collectors;
 @Service
 public class OrderStatusService extends AbstractJpaDaoService {
     private OrderStatusRepository orderStatusRepository;
+
+    public OrderReq addOrder(OrderReq orderReq) {
+        OrderStatusEntity orderStatusEntity = OrderConverter.fromOrderReq(orderReq);
+        OrderStatusEntity savedOrder = orderStatusRepository.save(orderStatusEntity);
+        return OrderConverter.fromOrderStatusEntity(savedOrder);
+    }
+
 
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
@@ -38,4 +46,5 @@ public class OrderStatusService extends AbstractJpaDaoService {
         orderStatusEntity.setOrderStatusDate(LocalDateTime.of(2021, 12, 15, 8, 0));
         orderStatusRepository.save(orderStatusEntity);
     }
+
 }
