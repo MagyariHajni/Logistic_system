@@ -21,40 +21,39 @@
     <div style="font-size: 30px">
         <label>Date: </label>
         <label th:text="${currentdate}"> </label>
-        <button class="btn btn-default" style="margin: 10px"><a href="/order/new-day">Next Day</a></button>
+
+        <a href="/order/new-day" class="btn btn-default" style="color:#337ab7">Next Day</a>
+        <a href="/order/previous-day" class="btn btn-default" style="color:#337ab7">Previous Day</a>
     </div>
 
     <div>
         <h3 style="display: inline">Order List</h3>
-        <button class="btn btn-default" style=" text-align:center;margin-bottom:10px"><a href="/destinations/list"
-                                                                                         style="text-decoration:none">
-            <h3 style="margin:0px">Destinations list</h3></a></button>
+        <a href="/destinations/list" class="btn btn-default"
+           style="text-decoration:none;text-align:center;margin-bottom:10px;color:#337ab7">
+            <h3 style="margin:0px">Destinations list</h3></a>
     </div>
 
     <div th:if="${#lists.isEmpty(orders)}">
         <h3 th:text="'No registered orders for date: ' + ${currentdate}+' ' + ${destinationtofind}">
         </h3>
-        <button class="btn btn-default" style="width: 120px"><a href="***TODO***/order/new">Add Orders</a></button>
-        <button class="btn btn-default" style="width: 120px"><a href="/order/">All orders</a></button>
+        <a href="***TODO***/order/new" class="btn btn-default" style="color:#337ab7;width: 120px">Add Orders</a>
+        <a href="/order/" class="btn btn-default" style="color:#337ab7;width: 120px">All orders</a>
     </div>
 
     <div th:if="${not #lists.isEmpty(orders)}">
         <div>
             <div>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="/order/">All orders</a>
-                </button>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px">
-
-                    <a th:href="${'/order/list?date='+{#temporals.format(currentdate, 'dd-MM-yyyy')}}">List today</a>
-
-                </button>
+                <a href="/order/" class="btn btn-default" style="color:#337ab7;width: 120px;margin-bottom:10px">All
+                    orders</a>
+                <a th:href="${'/order/list?date='+{#temporals.format(currentdate, 'dd-MM-yyyy')}}"
+                   class="btn btn-default" style="color:#337ab7;width: 120px;margin-bottom:10px">List today</a>
 
             </div>
             <div>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a
-                        href="***TODO***/order/new">Add orders</a></button>
-                <button class="btn btn-default" style="width: 120px;margin-bottom:10px"><a href="***TODO***">Ship
-                    today</a></button>
+                <a href="***TODO***/order/new" class="btn btn-default"
+                   style="color:#337ab7;width: 120px;margin-bottom:10px">Add Orders</a>
+                <a href="***TODO***" class="btn btn-default" style="color:#337ab7;width: 120px;margin-bottom:10px">Ship
+                    today</a>
 
             </div>
         </div>
@@ -69,7 +68,8 @@
                 </div>
 
                 <div style="display: inline-block;  float:right">
-                    <button class="btn btn-default" style="width: 120px;margin-bottom:10px; color:#333" type="submit">
+                    <button class="btn btn-default" style="width: 120px;margin-bottom:10px; color:#337ab7"
+                            type="submit">
                         Cancel selected
                     </button>
                 </div>

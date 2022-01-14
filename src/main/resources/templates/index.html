@@ -2,30 +2,29 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head lang="en">
 
-  <title>Register company</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Register company</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-  <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
-        th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
-        rel="stylesheet" media="screen"/>
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen"/>
 
-  <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
-          th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
+            th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
 
-  <link href="../static/css/spring-core.css"
-        th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
+    <link href="../static/css/spring-core.css"
+          th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
 </head>
 <body>
 <div class="container">
 
 
-  <h3>Welcome, :)</h3>
+    <h3>Welcome, :)</h3>
 
-  <div class="row">
-    <button class="btn btn-default"><a href="/order/list">View initial orders</a></button>
-
-    <button class="btn btn-default" style="margin-left: 10px"><a href="/destinations/list">View available destinations</a></button>
-  </div>
+    <div class="row">
+        <a href="/order/list" class="btn btn-default" style="color:#337ab7"><h4>View initial orders</h4></a>
+        <a href="/destinations/list" class="btn btn-default" style="color:#337ab7"><h4>View available destinations</h4></a>
+    </div>
 
 
 </div>

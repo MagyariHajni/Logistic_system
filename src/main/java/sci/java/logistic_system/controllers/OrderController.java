@@ -15,6 +15,7 @@ import sci.java.logistic_system.services.GlobalData;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -154,5 +155,17 @@ public class OrderController {
         globalData.setCommonModelAttributes(model);
         return "orders";
     }
+
+    @RequestMapping({"/order/previous-day"}) //previous day need to be >=with current day
+    public String previousDay(Model model) {
+
+        if(!globalData.getCurrentDate().minusDays(1).isBefore(LocalDateTime.of(2021,12,15,8,0))){
+            globalData.setCurrentDate(globalData.getCurrentDate().minusDays(1));
+        }
+        globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
+        globalData.setCommonModelAttributes(model);
+        return "orders";
+    }
+
 
 }

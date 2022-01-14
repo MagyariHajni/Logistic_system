@@ -50,6 +50,12 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         return deliveryOrderRepository;
     }
 
+//    public OrderReq addOrder(OrderReq orderReq) {
+//        OrderStatusEntity orderStatusEntity = OrderConverter.fromOrderReq(orderReq);
+//        OrderStatusEntity savedOrder = orderStatusRepository.save(orderStatusEntity);
+//        return OrderConverter.fromOrderStatusEntity(savedOrder);
+//    }
+
     public void loadInitialOrders() {
         Path fileIn = new File("src/main/resources/orders.csv").toPath();
 
