@@ -46,5 +46,8 @@ public class GlobalData {
         model.addAttribute("orders", getCurrentViewOrderList());
         model.addAttribute("currentdate", getCurrentDate().toLocalDate());
         model.addAttribute("statuses", OrderStatus.values());
+        model.addAttribute("destinationtofind","");
     }
+
+
 }

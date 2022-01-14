@@ -64,6 +64,11 @@ public class DestinationController {
     public String editDestination(@PathVariable Integer id, Model model) {
         model.addAttribute("destination", destinationRepository.findById(id).isPresent() ?
                 destinationRepository.findById(id).get() : null);
+
+        List<DeliveryOrderEntity> updatedCurrentView
+                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
+        globalData.setCurrentViewOrderList(updatedCurrentView);
+
         return "destinationform";
     }
 
@@ -87,7 +92,7 @@ public class DestinationController {
                 return "redirect:destinations/" + savedDestination.getId();
             }
         } else {
-            //TODO  log+file destination couldn't be saved
+            //TODO  log+file destination couldn't be saved because not all data was given
             return "redirect:destinations/";
         }
 
@@ -95,6 +100,7 @@ public class DestinationController {
 
     @GetMapping("destinations/delete/{id}")
     public String deleteDestination(@PathVariable Integer id) {
+
         Optional<DestinationEntity> destinationToDelete = destinationRepository.findById(id);
         if (destinationToDelete.isPresent()) {
 
@@ -110,6 +116,11 @@ public class DestinationController {
         } else {
 //            TODO log+file destination couldn't be delete, not in the repository
         }
+
+        List<DeliveryOrderEntity> updatedCurrentView
+                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
+        globalData.setCurrentViewOrderList(updatedCurrentView);
+
         destinationRepository.deleteById(id);
         return "redirect:/destinations/";
     }

@@ -3,6 +3,7 @@ package sci.java.logistic_system.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
+import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.OrderStatus;
 import sci.java.logistic_system.domain.OrderStatusEntity;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
@@ -13,11 +14,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class DeliveryOrderService extends AbstractJpaDaoService {
@@ -96,14 +100,17 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                     + " Destination not available anymore");
         }
 
-        if (order.getOrderStatus() == OrderStatus.CANCELED) {
-            OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
-            foundStatus.setOrderStatusDate(order.getLastUpDated());
-            orderStatusRepository.save(foundStatus);
-        } else {
-            order.setOrderStatus(OrderStatus.CANCELED);
-            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+        if (order.getOrderStatus() != OrderStatus.DELIVERED) {
+            if (order.getOrderStatus() == OrderStatus.CANCELED) {
+                OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
+                foundStatus.setOrderStatusDate(order.getLastUpDated());
+                orderStatusRepository.save(foundStatus);
+            } else {
+                order.setOrderStatus(OrderStatus.CANCELED);
+                orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+            }
         }
+
     }
 
     public void modifyOrderWithChangedDestination(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date) {
@@ -123,6 +130,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData) {
+
         if ((order.getOrderStatus() == orderPreviousData.getOrderStatus())) {
             OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
             foundStatus.setOrderStatusDate(order.getLastUpDated());
@@ -130,6 +138,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         } else {
             orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
         }
+
 
         if (Objects.equals(order.getDestinationComment(), "")) {
             order.setDestinationComment(orderPreviousData.getDestinationComment());
@@ -143,11 +152,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                 order.setOrderStatus(OrderStatus.CANCELED);
                 order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
                 deliveryOrderRepository.save(order);
-                OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
-                orderStatusEntity.setOrderId(order.getId());
-                orderStatusEntity.setOrderStatus(OrderStatus.CANCELED);
-                orderStatusEntity.setOrderStatusDate(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
-                orderStatusRepository.save(orderStatusEntity);
+                orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.CANCELED, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
             }
         }
     }
@@ -168,6 +173,48 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
         deliveryOrderRepository.save(order);
         return order;
+    }
+
+    public List<DeliveryOrderEntity> filterOrdersByDateAndDestination
+            (LocalDateTime date, String destinationName, LocalDateTime globalDate) {
+
+        List<DeliveryOrderEntity> listOfOrdersForToday = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
+        LocalDate dateDate;
+        List<DestinationEntity> destinationsList = (List<DestinationEntity>) destinationRepository.findAll();
+        boolean foundDestination = destinationsList.stream().anyMatch(dest -> dest.getDestinationName().equals(destinationName));
+
+        if (Objects.isNull(date)) {
+            dateDate = globalDate.toLocalDate();
+        } else {
+            dateDate = date.toLocalDate();
+        }
+
+        if (Objects.isNull(destinationName) || destinationName.isEmpty()) {
+            return listOfOrdersForToday.stream()
+                    .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateDate))
+                    .collect(Collectors.toList());
+        } else {
+            if (foundDestination) {
+                return listOfOrdersForToday.stream()
+                        .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateDate))
+                        .filter(order -> order.getOrderDestination().getDestinationName().equals(destinationName))
+                        .collect(Collectors.toList());
+            } else {
+                return new ArrayList<>();
+            }
+        }
+    }
+
+    public List<DeliveryOrderEntity> updateView(List<DeliveryOrderEntity> allOrders, List<DeliveryOrderEntity> listToCheck) {
+        List<DeliveryOrderEntity> updatedList = new ArrayList<>();
+        for (DeliveryOrderEntity order : listToCheck) {
+
+            if (!allOrders.contains(order)) {
+                order = deliveryOrderRepository.findById(order.getId()).get();
+            }
+            updatedList.add(order);
+        }
+        return updatedList;
     }
 
 
