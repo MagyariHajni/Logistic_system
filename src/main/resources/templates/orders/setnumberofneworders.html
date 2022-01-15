@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head lang="en">
 
-    <title>List canceled orders</title>
+    <title>Set the number of new orders to add</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
@@ -17,28 +17,25 @@
 </head>
 <body>
 <div class="container">
-
     <div style="font-size: 30px">
         <label>Date: </label>
-        <label th:text="${currentdate}"> </label>
+        <label th:text="${#temporals.format(currentdate, 'dd-MM-yyyy')}"> </label>
     </div>
 
-    <div th:if="${#lists.isEmpty(canceledorders)}">
-        <h3>You have not selected available orders to cancel.</h3>
-    </div>
+    <form  th:object="${numberofneworders}" th:action="@{/order/addorder}" method="post">
+    <div class="form-group">
+        <label style="font-size: 20px;display: inline">Set the number of new orders to add:</label>
+        <input type="text" style="display: inline-block;width: 50px" th:field="*{numberOfOrders}"/>
+        <button type="submit" class="btn btn-default" style="color:#337ab7;width: 50px; height: 30px; padding: 3px;color:#337ab7">Set</button>
 
-    <div th:if="${not #lists.isEmpty(canceledorders)}">
-        <h3>You have canceled the following orders:</h3>
-        <ul >
-            <li th:each="order : ${canceledorders}">
-                <h4>Order nr <span th:text="${order.id}"></span></h4>
-            </li>
-        </ul>
     </div>
+    </form>
+
 
     <div class="row" style="margin-top:10px">
-        <a href="/order/list" class="btn btn-default" style="color:#337ab7">Back to orders list</a>
+        <a href="/order/" class="btn btn-default" style="color:#337ab7">Back to orders list</a>
     </div>
+
 
 </div>
 

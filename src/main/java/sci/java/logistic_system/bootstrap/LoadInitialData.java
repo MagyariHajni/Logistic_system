@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.DestinationService;
 
-//dsflkfhsd
 
 @Component
 public class LoadInitialData implements ApplicationListener<ContextRefreshedEvent> {

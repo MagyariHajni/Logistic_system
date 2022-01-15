@@ -20,10 +20,11 @@
 
     <div style="font-size: 30px">
         <label>Date: </label>
-        <label th:text="${currentdate}"> </label>
+        <label th:text="${#temporals.format(currentdate, 'dd-MM-yyyy')}"> </label>
 
-        <a href="/order/new-day" class="btn btn-default" style="color:#337ab7">Next Day</a>
         <a href="/order/previous-day" class="btn btn-default" style="color:#337ab7">Previous Day</a>
+        <a href="/order/next-day" class="btn btn-default" style="color:#337ab7">Next Day</a>
+
     </div>
 
     <div>
@@ -34,9 +35,8 @@
     </div>
 
     <div th:if="${#lists.isEmpty(orders)}">
-        <h3 th:text="'No registered orders for date: ' + ${currentdate}+' ' + ${destinationtofind}">
-        </h3>
-        <a href="***TODO***/order/new" class="btn btn-default" style="color:#337ab7;width: 120px">Add Orders</a>
+        <h3>No registered orders meet the filtering criteria</h3>
+        <a href="/order/new" class="btn btn-default" style="color:#337ab7;width: 120px">Add Orders</a>
         <a href="/order/" class="btn btn-default" style="color:#337ab7;width: 120px">All orders</a>
     </div>
 
@@ -50,8 +50,9 @@
 
             </div>
             <div>
-                <a href="***TODO***/order/new" class="btn btn-default"
+                <a href="/order/new" class="btn btn-default"
                    style="color:#337ab7;width: 120px;margin-bottom:10px">Add Orders</a>
+
                 <a href="***TODO***" class="btn btn-default" style="color:#337ab7;width: 120px;margin-bottom:10px">Ship
                     today</a>
 
@@ -79,29 +80,26 @@
                 <!--            bootstrap class for table-->
                 <tr>
                     <th>Id
-                        <button class="btn btn-default"
-                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
-                            <a href="/order/sort/byid">⇅</a></button>
+                            <a href="/order/sort/byid" class="btn btn-default"
+                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Destination
-                        <button class="btn btn-default"
-                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
-                            <a href="/order/sort/bydestination">⇅</a></button>
+                            <a href="/order/sort/bydestination" class="btn btn-default"
+                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Order status
-                        <button class="btn btn-default"
-                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
-                            <a href="/order/sort/byorderstatus">⇅</a></button>
+
+                            <a href="/order/sort/byorderstatus" class="btn btn-default"
+                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Delivery date
-                        <button class="btn btn-default"
-                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
-                            <a href="/order/sort/bydeliverydate">⇅</a></button>
+
+                            <a href="/order/sort/bydeliverydate" class="btn btn-default"
+                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Last updated
-                        <button class="btn btn-default"
-                                style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">
-                            <a href="/order/sort/bylastupdated">⇅</a></button>
+                            <a href="/order/sort/bylastupdated" class="btn btn-default"
+                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
 
                     <th>Details</th>
@@ -125,7 +123,7 @@
                     <td><a th:href="${'/order/' + order.id}">View</a></td>
                     <td><a th:href="${'/order/edit/' + order.id}">Edit</a></td>
 
-                    <td><input type="checkbox" th:field="*{selectedOrders}" th:value="${order.id}"/></td>
+                    <td><input type="checkbox" th:field="*{listOfOrders}" th:value="${order.id}"/></td>
                 </tr>
 
             </table>

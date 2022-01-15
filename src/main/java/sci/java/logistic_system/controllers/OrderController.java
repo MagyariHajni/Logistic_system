@@ -4,9 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import sci.java.logistic_system.domain.DeliveryOrderData;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.OrderStatus;
-import sci.java.logistic_system.domain.SelectedDeliveryOrders;
+import sci.java.logistic_system.domain.ThymeleafBindingObject;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
@@ -15,7 +16,8 @@ import sci.java.logistic_system.services.GlobalData;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.chrono.ChronoLocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -55,11 +57,10 @@ public class OrderController {
     }
 
     @GetMapping(value = "order/")
-    public String allOrders(Model model){
-
+    public String allOrders(Model model) {
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         globalData.setCommonModelAttributes(model);
-        return "orders";
+        return "orders/orders";
     }
 
     @GetMapping(value = "order/list")
@@ -76,7 +77,7 @@ public class OrderController {
 
         }
         globalData.setCommonModelAttributes(model);
-        return "orders";
+        return "orders/orders";
     }
 
     @GetMapping(value = {"order/status"})
@@ -92,7 +93,33 @@ public class OrderController {
         if (!Objects.isNull(destination)) {
             model.addAttribute("destinationtofind", destination);
         }
-        return "orders";
+        return "orders/orders";
+    }
+
+    @GetMapping(value = {"order/filter"})
+    public String sortByDateAndOrderAndDestination(
+            @RequestParam(required = false) LocalDateTime date,
+            @RequestParam(required = false) String destination,
+            @RequestParam(required = false) String status,
+            Model model) {
+        List<DeliveryOrderEntity> filteredOrdersList = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
+
+        if ((!Objects.isNull(date))) {
+            filteredOrdersList = deliveryOrderService.filterOrdersByDate(filteredOrdersList, date);
+        }
+        if ((!Objects.isNull(destination))) {
+            filteredOrdersList = deliveryOrderService.filterOrdersByDestination(filteredOrdersList, destination);
+        }
+        if ((!Objects.isNull(status))) {
+            filteredOrdersList = deliveryOrderService.filterOrdersByStatus(filteredOrdersList, status);
+        }
+
+        globalData.setCurrentViewOrderList(filteredOrdersList);
+        globalData.setCommonModelAttributes(model);
+        if (!Objects.isNull(destination)) {
+            model.addAttribute("destinationtofind", destination);
+        }
+        return "orders/orders";
     }
 
     @GetMapping("order/{id}")
@@ -103,7 +130,7 @@ public class OrderController {
 
         globalData.setCommonModelAttributes(model);
         model.addAttribute("orderstatuses", orderStatusRepository.findOrderStatusesById(id));
-        return "orderdetails";
+        return "orders/orderdetails";
     }
 
     @GetMapping("order/edit/{id}")
@@ -112,16 +139,18 @@ public class OrderController {
                 deliveryOrderRepository.findById(id).get() : null);
         globalData.setCommonModelAttributes(model);
         model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
-        return "orderform";
+        return "orders/orderform";
     }
 
     @PostMapping(value = "/order")
     public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order) {
 
-        if (!order.getDeliveryDate().isBefore(globalData.getCurrentDate()) || order.getOrderStatus()==OrderStatus.CANCELED) {
-            deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
+        if (order.getDeliveryDate().isBefore(globalData.getCurrentDate())) {
+//            TODO throw,console log, file log order couldn 't be modified, delivery date before current date
+        } else if ((deliveryOrderRepository.findById(order.getId()).get().equals(order))) {
+//            TODO throw,console log, file log nothing has changed
         } else {
-//            TODO throw,console log, file log order couldn't be modified, delivery date before current date
+            deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
         }
 
         List<DeliveryOrderEntity> updatedCurrentView
@@ -132,9 +161,10 @@ public class OrderController {
     }
 
     @PostMapping(value = "/order/cancel")
-    public String cancelOrders(@ModelAttribute("selectedlist") SelectedDeliveryOrders selectedOrders, Model model) {
+    public String cancelOrders(@ModelAttribute("selectedlist") ThymeleafBindingObject selectedOrders, Model model) {
+
         if (selectedOrders != null) {
-            List<DeliveryOrderEntity> ordersToCancel = selectedOrders.getSelectedOrders().stream()
+            List<DeliveryOrderEntity> ordersToCancel = selectedOrders.getListOfOrders().stream()
                     .filter(order -> (order.getOrderStatus() != OrderStatus.CANCELED) && (order.getOrderStatus() != OrderStatus.DELIVERED))
                     .collect(Collectors.toList());
             deliveryOrderService.cancelSelectedOrders(ordersToCancel, globalData.getCurrentDate());
@@ -145,26 +175,85 @@ public class OrderController {
         globalData.setCurrentViewOrderList(updatedCurrentView);
         globalData.setCommonModelAttributes(model);
 
-        return "canceledorders";
+        return "orders/canceledorders";
     }
 
-    @RequestMapping({"/order/new-day"})
+    @GetMapping("order/new")
+    public String setNumberOfOrdersToAdd(Model model) {
+        globalData.setCommonModelAttributes(model);
+        model.addAttribute("numberofneworders", new ThymeleafBindingObject());
+        return "orders/setnumberofneworders";
+    }
+
+    @PostMapping(value = "/order/addorder")
+    public String setNumberOfOrdersToAdd(@ModelAttribute("numberofneworders") ThymeleafBindingObject number) {
+        return "redirect:/order/add?number=" + number.getNumberOfOrders();
+    }
+
+    @GetMapping("order/add")
+    public String addOrders(@RequestParam(required = false) Integer number, Model model) {
+        if ((Objects.isNull(number)) || number == 0) {
+            number = 1;
+        }
+
+        ThymeleafBindingObject thymeleafBindingObject = new ThymeleafBindingObject();
+        for (int i = 0; i < number; i++) {
+            thymeleafBindingObject.addDeliveryOrderData(new DeliveryOrderData());
+        }
+
+        model.addAttribute("listofneworders", thymeleafBindingObject);
+        model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
+        globalData.setCommonModelAttributes(model);
+        return "orders/addordersform";
+    }
+
+    @PostMapping("/order/add")
+    public String addOrders(@ModelAttribute("listofneworders") ThymeleafBindingObject listOfData, Model model) {
+        List<DeliveryOrderEntity> savedOrders = new ArrayList<>();
+        for (DeliveryOrderData dataToConvert : listOfData.getListOfOrderData()) {
+            if (!Objects.isNull(dataToConvert)) {
+                try {
+                    String[] deliveryDateData = dataToConvert.getDeliveryDate().split("-");
+                    LocalDateTime deliveryDate = LocalDateTime.of(
+                            Integer.parseInt(deliveryDateData[2]),
+                            Integer.parseInt(deliveryDateData[1]),
+                            Integer.parseInt(deliveryDateData[0]),
+                            8, 0);
+                    if (!deliveryDate.toLocalDate().isBefore(globalData.getCurrentDate().toLocalDate().plusDays(1))) {
+                        DeliveryOrderEntity savedOrder
+                                = deliveryOrderService.convertAndSaveOrder(dataToConvert.getDestination().getDestinationName() + "," + dataToConvert.getDeliveryDate()
+                                , LocalDateTime.of(globalData.getCurrentDate().toLocalDate(), LocalTime.now()));
+                        savedOrders.add(savedOrder);
+                    } else {
+//                    TODO log+file date before current date, order not saved
+                    }
+                } catch (Exception e) {
+//                TODO log+file invalid input for date, order not saved
+                }
+            }
+        }
+
+        model.addAttribute("addedorders", savedOrders);
+        globalData.setCommonModelAttributes(model);
+        return "orders/addedorders";
+    }
+
+    @GetMapping({"/order/next-day"})
     public String newDay(Model model) {
         globalData.setCurrentDate(globalData.getCurrentDate().plusDays(1));
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         globalData.setCommonModelAttributes(model);
-        return "orders";
+        return "orders/orders";
     }
 
-    @RequestMapping({"/order/previous-day"}) //previous day need to be >=with current day
+    @GetMapping({"/order/previous-day"}) //previous day need to be >=with current day
     public String previousDay(Model model) {
-
-        if(!globalData.getCurrentDate().minusDays(1).isBefore(LocalDateTime.of(2021,12,15,8,0))){
+        if (!globalData.getCurrentDate().minusDays(1).isBefore(LocalDateTime.of(2021, 12, 15, 8, 0))) {
             globalData.setCurrentDate(globalData.getCurrentDate().minusDays(1));
         }
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         globalData.setCommonModelAttributes(model);
-        return "orders";
+        return "orders/orders";
     }
 
 

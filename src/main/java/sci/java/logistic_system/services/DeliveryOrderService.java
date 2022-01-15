@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.OrderStatus;
-import sci.java.logistic_system.domain.OrderStatusEntity;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
@@ -19,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -62,8 +62,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                DeliveryOrderEntity order = convertAndSaveOrder(line);
-                orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.NEW, LocalDateTime.of(2021, 12, 15, 8, 0));
+                DeliveryOrderEntity order = convertAndSaveOrder(line,LocalDateTime.of(2021, 12, 15, 8, 0));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,16 +106,9 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         }
 
         if (order.getOrderStatus() != OrderStatus.DELIVERED) {
-            if (order.getOrderStatus() == OrderStatus.CANCELED) {
-                OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
-                foundStatus.setOrderStatusDate(order.getLastUpDated());
-                orderStatusRepository.save(foundStatus);
-            } else {
-                order.setOrderStatus(OrderStatus.CANCELED);
-                orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
-            }
+            order.setOrderStatus(OrderStatus.CANCELED);
+            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
         }
-
     }
 
     public void modifyOrderWithChangedDestination(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date) {
@@ -136,16 +128,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData) {
-
-        if ((order.getOrderStatus() == orderPreviousData.getOrderStatus())) {
-            OrderStatusEntity foundStatus = orderStatusRepository.findById(order.getId()).get();
-            foundStatus.setOrderStatusDate(order.getLastUpDated());
-            orderStatusRepository.save(foundStatus);
-        } else {
-            orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
-        }
-
-
+        orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
         if (Objects.equals(order.getDestinationComment(), "")) {
             order.setDestinationComment(orderPreviousData.getDestinationComment());
         }
@@ -163,7 +146,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         }
     }
 
-    public DeliveryOrderEntity convertAndSaveOrder(String input) {
+    public DeliveryOrderEntity convertAndSaveOrder(String input,LocalDateTime date) {
         String[] inputData = input.split(",");
         String[] deliveryDate = inputData[1].split("-");
 
@@ -176,8 +159,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                 Integer.parseInt(deliveryDate[0]),
                 8, 0));
         order.setOrderStatus(OrderStatus.NEW);
-        order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
+        order.setLastUpDated(date);
+//        order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
         deliveryOrderRepository.save(order);
+        orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.NEW, date);
         return order;
     }
 
@@ -185,6 +170,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
             (LocalDateTime date, String destinationName, LocalDateTime globalDate) {
 
         List<DeliveryOrderEntity> listOfOrdersForToday = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
+
         LocalDate dateDate;
         List<DestinationEntity> destinationsList = (List<DestinationEntity>) destinationRepository.findAll();
         boolean foundDestination = destinationsList.stream().anyMatch(dest -> dest.getDestinationName().equals(destinationName));
@@ -210,6 +196,46 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
             }
         }
     }
+
+    public List<DeliveryOrderEntity> filterOrdersByDate(List<DeliveryOrderEntity> orderListToFilter, LocalDateTime date) {
+        if (!(Objects.isNull(date))) {
+            if (true) {//only works for valid date inputs
+                LocalDate dateDate = date.toLocalDate();
+                orderListToFilter = orderListToFilter.stream()
+                        .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateDate))
+                        .collect(Collectors.toList());
+            }
+        }
+        return orderListToFilter;
+    }
+
+    public List<DeliveryOrderEntity> filterOrdersByDestination(List<DeliveryOrderEntity> orderListToFilter, String destinationName) {
+        if (!(Objects.isNull(destinationName)) && !(destinationName.isEmpty())) {
+            List<DestinationEntity> destinationsList = (List<DestinationEntity>) destinationRepository.findAll();
+            boolean foundDestination = destinationsList.stream().anyMatch(dest -> dest.getDestinationName().equals(destinationName));
+            if (foundDestination) {
+                orderListToFilter = orderListToFilter.stream()
+                        .filter(order -> order.getOrderDestination().getDestinationName().equals(destinationName))
+                        .collect(Collectors.toList());
+            } else {
+                orderListToFilter = new ArrayList<>();
+//                TODO log + file given destination is not an available destination
+            }
+        }
+        return orderListToFilter;
+    }
+
+    public List<DeliveryOrderEntity> filterOrdersByStatus(List<DeliveryOrderEntity> orderListToFilter, String statusName) {
+        if (!(Objects.isNull(statusName)) && !(statusName.isEmpty())) {
+            if (Arrays.stream(OrderStatus.values()).anyMatch(orderStatus -> orderStatus.name().equals(statusName.toUpperCase()))) {
+                orderListToFilter = orderListToFilter.stream().filter(order -> order.getOrderStatus().name().equals(statusName.toUpperCase())).collect(Collectors.toList());
+            } else {
+//                TODO log+file invalid status value input
+            }
+        }
+        return orderListToFilter;
+    }
+
 
     public List<DeliveryOrderEntity> updateView(List<DeliveryOrderEntity> allOrders, List<DeliveryOrderEntity> listToCheck) {
         List<DeliveryOrderEntity> updatedList = new ArrayList<>();

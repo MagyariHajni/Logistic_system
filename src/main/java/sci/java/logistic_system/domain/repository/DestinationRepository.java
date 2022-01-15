@@ -17,5 +17,4 @@ public interface DestinationRepository extends CrudRepository<DestinationEntity,
                 .collect(Collectors.toList());
     }
 
-
 }

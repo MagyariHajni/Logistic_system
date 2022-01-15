@@ -4,6 +4,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 public class DeliveryOrderEntity {
@@ -62,5 +63,18 @@ public class DeliveryOrderEntity {
     }
     public void setLastUpDated(LocalDateTime lastUpDated) {
         this.lastUpDated = lastUpDated;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DeliveryOrderEntity)) return false;
+        DeliveryOrderEntity that = (DeliveryOrderEntity) o;
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getOrderDestination(), that.getOrderDestination()) && Objects.equals(getDeliveryDate(), that.getDeliveryDate()) && getOrderStatus() == that.getOrderStatus();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getOrderDestination(), getDeliveryDate(), getOrderStatus());
     }
 }

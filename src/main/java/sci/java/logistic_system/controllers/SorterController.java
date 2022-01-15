@@ -61,7 +61,7 @@ public class SorterController {
 
         model.addAttribute("orders", availableDestinationOrders);
 
-        return "orders";
+        return "orders/orders";
     }
 
     @RequestMapping({"/order/sort/byorderstatus"})
@@ -72,7 +72,7 @@ public class SorterController {
                 .sorted(Comparator.comparing(o1 -> o1.getOrderStatus().name()))
                 .collect(Collectors.toList()));
 
-        return "orders";
+        return "orders/orders";
     }
 
     @RequestMapping({"/order/sort/bydeliverydate"})
@@ -83,7 +83,7 @@ public class SorterController {
                 .sorted(Comparator.comparing(DeliveryOrderEntity::getDeliveryDate))
                 .collect(Collectors.toList()));
 
-        return "orders";
+        return "orders/orders";
     }
 
     @RequestMapping({"/order/sort/bylastupdated"})
@@ -93,7 +93,7 @@ public class SorterController {
         model.addAttribute("orders", globalData.getCurrentViewOrderList().stream()
                 .sorted(Comparator.comparing(DeliveryOrderEntity::getLastUpDated))
                 .collect(Collectors.toList()));
-        return "orders";
+        return "orders/orders";
     }
 
     @RequestMapping({"/destinations/sort/byid"})
@@ -103,7 +103,7 @@ public class SorterController {
         model.addAttribute("destinations", orders.stream()
                 .sorted(Comparator.comparing(DestinationEntity::getId))
                 .collect(Collectors.toList()));
-        return "destinations";
+        return "destination/destinations";
     }
 
     @RequestMapping({"/destinations/sort/byname"})
@@ -113,7 +113,7 @@ public class SorterController {
         model.addAttribute("destinations", orders.stream()
                 .sorted(Comparator.comparing(DestinationEntity::getDestinationName))
                 .collect(Collectors.toList()));
-        return "destinations";
+        return "destination/destinations";
     }
 
     @RequestMapping({"/destinations/sort/bydistance"})
@@ -123,7 +123,7 @@ public class SorterController {
         model.addAttribute("destinations", orders.stream()
                 .sorted(Comparator.comparing(DestinationEntity::getDistance))
                 .collect(Collectors.toList()));
-        return "destinations";
+        return "destination/destinations";
     }
 
 }

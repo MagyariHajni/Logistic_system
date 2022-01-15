@@ -49,7 +49,7 @@ public class DestinationController {
     public String listDestinations(Model model) {
         model.addAttribute("destinations", destinationRepository.findAll());
         globalData.setCommonModelAttributes(model);
-        return "destinations";
+        return "destination/destinations";
     }
 
     @GetMapping("destinations/{id}")
@@ -57,7 +57,7 @@ public class DestinationController {
         model.addAttribute("destination",
                 destinationRepository.findById(id).isPresent() ?
                         destinationRepository.findById(id).get() : null);
-        return "destinationdetails";
+        return "destination/destinationdetails";
     }
 
     @GetMapping("destinations/edit/{id}")
@@ -69,41 +69,45 @@ public class DestinationController {
                 = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
         globalData.setCurrentViewOrderList(updatedCurrentView);
 
-        return "destinationform";
+        return "destination/destinationform";
     }
 
     @GetMapping("destinations/add")
     public String addDestination(Model model) {
         model.addAttribute("destination", new DestinationEntity());
-        return "destinationform";
+        return "destination/destinationform";
     }
 
     @PostMapping(value = "/destinations")
     public String saveOrUpdateDestination(DestinationEntity destination) {
         List<String> destinationNameList = destinationRepository.getAvailableDestinations();
-        String newDestinationName = destination.getDestinationName().substring(0, 1).toUpperCase()
-                + destination.getDestinationName().substring(1).toLowerCase();
+
         if ((!Objects.equals(destination.getDestinationName(), "")) && (!Objects.equals(destination.getDistance(), ""))) {
+            String newDestinationName = destination.getDestinationName().substring(0, 1).toUpperCase()
+                    + destination.getDestinationName().substring(1).toLowerCase();
             if (destinationNameList.contains(newDestinationName)) {
-//    TODO log+file destination couldn't be saved because it already exists
-                return "redirect:destinations/";
+                if (destinationRepository.findById(destination.getId()).get().getDistance() != destination.getDistance()) {
+                    destinationRepository.save(destination);
+                    return "redirect:/destinations/" + destination.getId();
+                } else {
+//    TODO log+file destination was not saved because it already exists
+                    return "redirect:/destinations/";
+                }
             } else {
-                DestinationEntity savedDestination = destinationRepository.save(destination);
-                return "redirect:destinations/" + savedDestination.getId();
+                destinationRepository.save(destination);
+                return "redirect:/destinations/" + destination.getId();
             }
         } else {
             //TODO  log+file destination couldn't be saved because not all data was given
-            return "redirect:destinations/";
+            return "redirect:/destinations/";
         }
 
     }
 
     @GetMapping("destinations/delete/{id}")
     public String deleteDestination(@PathVariable Integer id) {
-
         Optional<DestinationEntity> destinationToDelete = destinationRepository.findById(id);
         if (destinationToDelete.isPresent()) {
-
             List<DeliveryOrderEntity> allOrders = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
             List<DeliveryOrderEntity> ordersWithDestinationToDelete = allOrders.stream()
                     .filter(o1 -> Objects.equals(o1.getOrderDestination(), destinationToDelete.get()))
@@ -112,49 +116,16 @@ public class DestinationController {
             for (DeliveryOrderEntity order : ordersWithDestinationToDelete) {
                 deliveryOrderService.deleteOrderDestination(order, globalData.getCurrentDate());
             }
-
         } else {
 //            TODO log+file destination couldn't be delete, not in the repository
         }
-
         List<DeliveryOrderEntity> updatedCurrentView
                 = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
         globalData.setCurrentViewOrderList(updatedCurrentView);
-
         destinationRepository.deleteById(id);
         return "redirect:/destinations/";
     }
 
-
-//
-//    @PostMapping("/destinations/add")
-//    public ResponseEntity<DestinationEntity> addDestination(@Valid @RequestBody DestinationService dest) {
-//        return DestinationService.addDestination(dest);
-//    }
-//
-//    @PutMapping("/destinations/update")
-//    public ResponseEntity<DestinationEntity> updateDestination(@Valid @RequestBody DestinationService dest) {
-//        return DestinationService.updateDestination(dest);
-//    }
-//
-//    @GetMapping("/destinations")
-//    public List<DestinationEntity> getDestination(@RequestParam(required = false) Long destinationId) {
-//        if (destinationId == null) {
-//            return DestinationService.getAllDestinations(destinationId);
-//        } else {
-//            return DestinationService.getAllDestinations(destinationId);
-//        }
-//    }
-//
-//    @GetMapping("/destinations/{destinationId}")
-//    public String getDestinationById(@RequestParam int destinationId) {
-//        return null;
-//    }
-
-//    @DeleteMapping("/destinations/{destinationId}")
-//    public void deleteDestination(@RequestParam long destinationId) {
-//        DestinationService.deleteDestination((int) destinationId);
-//    }
 }
 
 
