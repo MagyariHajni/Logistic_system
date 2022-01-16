@@ -6,8 +6,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
-import sci.java.logistic_system.domain.repository.OrderStatusRepository;
-import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.GlobalData;
 
 import java.util.List;
@@ -16,10 +14,12 @@ import java.util.List;
 public class IndexController {
     private DeliveryOrderRepository deliveryOrderRepository;
     private DestinationRepository destinationRepository;
-    private OrderStatusRepository orderStatusRepository;
     private GlobalData globalData;
-    private DeliveryOrderService deliveryOrderService;
 
+    @Autowired
+    public void setDestinationRepository(DestinationRepository destinationRepository) {
+        this.destinationRepository = destinationRepository;
+    }
 
     @Autowired
     public void setGlobalData(GlobalData globalData) {
@@ -31,23 +31,8 @@ public class IndexController {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
 
-    @Autowired
-    public void setDestinationRepository(DestinationRepository destinationRepository) {
-        this.destinationRepository = destinationRepository;
-    }
-
-    @Autowired
-    public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
-        this.orderStatusRepository = orderStatusRepository;
-    }
-
-    @Autowired
-    public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
-        this.deliveryOrderService = deliveryOrderService;
-    }
-
     @RequestMapping("/")
-    public String index(){
+    public String index() {
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         return "index";
     }

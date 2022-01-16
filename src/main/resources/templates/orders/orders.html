@@ -18,16 +18,23 @@
 <body>
 <div class="container">
 
-    <div style="font-size: 30px">
-        <label>Date: </label>
-        <label th:text="${#temporals.format(currentdate, 'dd-MM-yyyy')}"> </label>
 
-        <a href="/order/previous-day" class="btn btn-default" style="color:#337ab7">Previous Day</a>
-        <a href="/order/next-day" class="btn btn-default" style="color:#337ab7">Next Day</a>
-        <a href="/actuator/info" class="btn btn-default" style="color:#337ab7">Profit Info</a>
-    </div>
+        <div style="font-size: 30px">
+            <div style="display: inline-block;float:left">
+                <label>Date: </label>
+                <label th:text="${#temporals.format(currentdate, 'dd-MM-yyyy')}"> </label>
 
-    <div>
+                <a href="/order/previous-day" class="btn btn-default" style="color:#337ab7">Previous Day</a>
+                <a href="/order/next-day" class="btn btn-default" style="color:#337ab7">Next Day</a>
+            </div>
+
+            <div style="display: inline-block; float:right">
+                <a href="/actuator/info" class="btn btn-default" style="color:#337ab7;font-size: 30px">Profit Info</a>
+            </div>
+        </div>
+
+
+    <div style="clear: both">
         <h3 style="display: inline">Order List</h3>
         <a href="/destinations/list" class="btn btn-default"
            style="text-decoration:none;text-align:center;margin-bottom:10px;color:#337ab7">
@@ -53,7 +60,8 @@
                 <a href="/order/new" class="btn btn-default"
                    style="color:#337ab7;width: 120px;margin-bottom:10px">Add Orders</a>
 
-                <a href="/shipping/new-day" class="btn btn-default" style="color:#337ab7;width: 120px;margin-bottom:10px">Ship
+                <a href="/shipping/new-day" class="btn btn-default"
+                   style="color:#337ab7;width: 120px;margin-bottom:10px">Ship
                     today</a>
 
             </div>
@@ -80,26 +88,26 @@
                 <!--            bootstrap class for table-->
                 <tr>
                     <th>Id
-                            <a href="/order/sort/byid" class="btn btn-default"
-                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                        <a href="/order/sort/byid" class="btn btn-default"
+                           style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Destination
-                            <a href="/order/sort/bydestination" class="btn btn-default"
-                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                        <a href="/order/sort/bydestination" class="btn btn-default"
+                           style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Order status
 
-                            <a href="/order/sort/byorderstatus" class="btn btn-default"
-                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                        <a href="/order/sort/byorderstatus" class="btn btn-default"
+                           style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Delivery date
 
-                            <a href="/order/sort/bydeliverydate" class="btn btn-default"
-                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                        <a href="/order/sort/bydeliverydate" class="btn btn-default"
+                           style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Last updated
-                            <a href="/order/sort/bylastupdated" class="btn btn-default"
-                               style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                        <a href="/order/sort/bylastupdated" class="btn btn-default"
+                           style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
 
                     <th>Details</th>

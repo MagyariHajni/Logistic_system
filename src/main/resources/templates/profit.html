@@ -22,11 +22,19 @@
         <label>Date: </label>
         <label th:text="${#temporals.format(currentdate, 'dd-MM-yyyy')}"> </label>
 
+        <a th:if="${#temporals.format(currentdate, 'dd-MM-yyyy')=='15-12-2021'}"
+           href="/actuator/info?until=15-12-2021" class="btn btn-default" style="color:#337ab7">Previous Day</a>
+
+        <a th:if="${#temporals.format(currentdate, 'dd-MM-yyyy')!='15-12-2021'}"
+           th:href="${'/actuator/info?until='+ {#temporals.format(currentdate.minusDays(1), 'dd-MM-yyyy')}}" class="btn btn-default" style="color:#337ab7">Previous Day</a>
+
+        <a th:href="${'/actuator/info?until='+ {#temporals.format(currentdate.plusDays(1), 'dd-MM-yyyy')}}" class="btn btn-default" style="color:#337ab7">Next Day</a>
+
     </div>
 
     <div style="font-size: 30px">
         <label>Profit: </label>
-        <label th:text="${profit}"> </label>
+        <label th:text="${{profit}+' LEI'}"> </label>
     </div>
 
     <div class="row" style="margin-top:10px">

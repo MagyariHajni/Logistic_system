@@ -1,6 +1,7 @@
 package sci.java.logistic_system.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -128,8 +129,8 @@ public class OrderController {
     @GetMapping("order/edit/{id}")
     public String editOrder(@PathVariable Integer id, Model model) {
         model.addAttribute("order", deliveryOrderRepository.findById(id).isPresent() ? deliveryOrderRepository.findById(id).get() : null);
-        globalData.setCommonModelAttributes(model);
         model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
+        globalData.setCommonModelAttributes(model);
         return "orders/orderform";
     }
 
@@ -201,73 +202,59 @@ public class OrderController {
     public String addOrders(@RequestParam(required = false) Map<String, String> orders,
                             @RequestParam(required = false) Integer number, Model model) {
 
+        globalData.setCommonModelAttributes(model);
+        ThymeleafBindingObject thymeleafBindingObject = new ThymeleafBindingObject();
+
         if ((Objects.isNull(number)) || number == 0) {
             number = 1;
         }
-
-        ThymeleafBindingObject thymeleafBindingObject = new ThymeleafBindingObject();
-        for (int i = 0; i < number; i++) {
-            thymeleafBindingObject.addDeliveryOrderData(new DeliveryOrderData());
+        if (!Objects.isNull(orders)) {
+            orders.remove("number");
         }
 
-        model.addAttribute("listofneworders", thymeleafBindingObject);
-        model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
-        globalData.setCommonModelAttributes(model);
-        return "orders/addordersform";
+        if (!Objects.isNull(orders) && !orders.isEmpty()) {
+            List<DeliveryOrderEntity> savedOrdersList = new ArrayList<>();
+            DeliveryOrderEntity savedOrder;
+            for (String destinationName : orders.keySet()) {
+                String originalName = destinationName;
+                destinationName = destinationName.substring(0, 1).toUpperCase() + destinationName.substring(1).toLowerCase();
+                DestinationEntity destination = destinationRepository.findDestinationEntityByDestinationName(destinationName);
 
-
-//        globalData.setCommonModelAttributes(model);
-//
-//        if ((Objects.isNull(number)) || number == 0) {
-//            number = 1;
-//        }
-//        ThymeleafBindingObject thymeleafBindingObject = new ThymeleafBindingObject();
-//
-//
-//        if (!Objects.isNull(orders) && !orders.isEmpty()){
-//            System.out.println("map is not null");
-//
-//
-//            model.addAttribute("addedorders", "savedOrders");
-//            return "orders/addedorders";
-//        }else {
-//            for (int i = 0; i < number; i++) {
-//                thymeleafBindingObject.addDeliveryOrderData(new DeliveryOrderData());
-//            }
-//            model.addAttribute("listofneworders", thymeleafBindingObject);
-//            model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
-//            return "orders/addordersform";
-//        }
+                if (!Objects.isNull(destination)) {
+                    savedOrder = addAndSaveOrder(destination, orders.get(originalName));
+                    if (!Objects.isNull(savedOrder)) {
+                        savedOrdersList.add(savedOrder);
+                    }
+                } else {
+//                    TODO log +file given destination is not available
+                }
+            }
+            model.addAttribute("addedorders", savedOrdersList);
+            return "orders/addedorders";
+        } else {
+            for (int i = 0; i < number; i++) {
+                thymeleafBindingObject.addDeliveryOrderData(new DeliveryOrderData());
+            }
+            model.addAttribute("listofneworders", thymeleafBindingObject);
+            model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
+            return "orders/addordersform";
+        }
     }
 
     @PostMapping("/order/add")
     public String addOrders(@ModelAttribute("listofneworders") ThymeleafBindingObject listOfData, Model model) {
-        List<DeliveryOrderEntity> savedOrders = new ArrayList<>();
 
+        List<DeliveryOrderEntity> savedOrdersList = new ArrayList<>();
+        DeliveryOrderEntity savedOrder;
         for (DeliveryOrderData dataToConvert : listOfData.getListOfOrderData()) {
             if (!Objects.isNull(dataToConvert)) {
-                try {
-                    String[] deliveryDateData = dataToConvert.getDeliveryDate().split("-");
-                    LocalDateTime deliveryDate = LocalDateTime.of(
-                            Integer.parseInt(deliveryDateData[2]),
-                            Integer.parseInt(deliveryDateData[1]),
-                            Integer.parseInt(deliveryDateData[0]),
-                            8, 0);
-                    if (!deliveryDate.toLocalDate().isBefore(globalData.getCurrentDate().toLocalDate().plusDays(1))) {
-                        DeliveryOrderEntity savedOrder
-                                = deliveryOrderService.convertAndSaveOrder(dataToConvert.getDestination().getDestinationName() + "," + dataToConvert.getDeliveryDate()
-                                , LocalDateTime.of(globalData.getCurrentDate().toLocalDate(), LocalTime.now()));
-                        savedOrders.add(savedOrder);
-                    } else {
-//                    TODO log+file date before current date, order not saved
-                    }
-                } catch (Exception e) {
-//                TODO log+file invalid input for date, order not saved
+                savedOrder = addAndSaveOrder(dataToConvert.getDestination(), dataToConvert.getDeliveryDate());
+                if (!Objects.isNull(savedOrder)) {
+                    savedOrdersList.add(savedOrder);
                 }
             }
         }
-
-        model.addAttribute("addedorders", savedOrders);
+        model.addAttribute("addedorders", savedOrdersList);
         globalData.setCommonModelAttributes(model);
         return "orders/addedorders";
     }
@@ -283,39 +270,51 @@ public class OrderController {
         shippingList.forEach(order -> order.setOrderStatus(OrderStatus.DELIVERING));
         shippingList.forEach(order -> deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate()));
 
-
         Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = deliveryOrderService.mapByDestination(shippingList);
 
         model.addAttribute("orderstodeliver", shippingList);
         model.addAttribute("mappedorders", mapByDestination);
 
-        deliveryOrderService.startShipping(mapByDestination, globalData);
+        startShipping(mapByDestination, globalData);
 
         List<DeliveryOrderEntity> updatedCurrentView
                 = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
+
         globalData.setCurrentViewOrderList(updatedCurrentView);
         globalData.setCommonModelAttributes(model);
         return "orders/deliveringorders";
     }
 
+    @Async
+    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination, GlobalData globalData){
+        deliveryOrderService.startShipping(mapByDestination, globalData);
+    }
 
     @GetMapping("actuator/info")
-    public String showProfit(Model model) {
-
+    public String showProfit(@RequestParam(required = false) String until,
+                             Model model) {
+        LocalDate untilDate;
         int profit = 0;
+        try {
+            String[] dateToken = until.split("-");
+            untilDate = LocalDate.of(Integer.parseInt(dateToken[2]),
+                    Integer.parseInt(dateToken[1]),
+                    Integer.parseInt(dateToken[0]));
+        } catch (Exception e) {
+//            TODO incorrect date input
+            untilDate = globalData.getCurrentDate().toLocalDate();
+        }
 
         for (LocalDate date : globalData.getProfitByDayMap().keySet()) {
-            if (date.isBefore(globalData.getCurrentDate().toLocalDate().plusDays(1))) {
-                System.out.println(date);
+            if (date.isBefore(untilDate.plusDays(1))) {
                 profit += globalData.getProfitByDayMap().get(date).get();
             }
         }
 
-        globalData.setCommonModelAttributes(model);
+        model.addAttribute("currentdate", untilDate);
         model.addAttribute("profit", profit);
         return "profit";
     }
-
 
     @GetMapping({"/order/next-day"})
     public String newDay(Model model) {
@@ -325,7 +324,7 @@ public class OrderController {
         return "orders/orders";
     }
 
-    @GetMapping({"/order/previous-day"}) //previous day need to be >=with current day
+    @GetMapping({"/order/previous-day"})
     public String previousDay(Model model) {
         if (!globalData.getCurrentDate().toLocalDate().minusDays(1).isBefore(LocalDateTime.of(2021, 12, 15, 8, 0).toLocalDate())) {
             globalData.setCurrentDate(globalData.getCurrentDate().minusDays(1));
@@ -333,6 +332,32 @@ public class OrderController {
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         globalData.setCommonModelAttributes(model);
         return "orders/orders";
+    }
+
+
+
+
+
+
+    private DeliveryOrderEntity addAndSaveOrder(DestinationEntity destination, String dateToConvert) {
+        DeliveryOrderEntity savedOrder = null;
+        try {
+            String[] deliveryDateData = dateToConvert.split("-");
+            LocalDateTime deliveryDate = LocalDateTime.of(
+                    Integer.parseInt(deliveryDateData[2]),
+                    Integer.parseInt(deliveryDateData[1]),
+                    Integer.parseInt(deliveryDateData[0]),
+                    8, 0);
+            if (!deliveryDate.toLocalDate().isBefore(globalData.getCurrentDate().toLocalDate().plusDays(1))) {
+                savedOrder = deliveryOrderService.convertAndSaveOrder(destination.getDestinationName() + "," + dateToConvert
+                        , LocalDateTime.of(globalData.getCurrentDate().toLocalDate(), LocalTime.now()));
+            } else {
+//                    TODO log+file date before current date, order not saved
+            }
+        } catch (Exception e) {
+//                TODO log+file invalid input for date, order not saved
+        }
+        return savedOrder;
     }
 
 

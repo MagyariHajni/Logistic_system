@@ -1,6 +1,7 @@
 package sci.java.logistic_system.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
@@ -21,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,16 +31,23 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     private DeliveryOrderRepository deliveryOrderRepository;
     private DestinationRepository destinationRepository;
     private OrderStatusRepository orderStatusRepository;
+    private GlobalData globalData;
 
+    @Autowired
+    public void setGlobalData(GlobalData globalData) {
+        this.globalData = globalData;
+    }
 
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
+
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
+
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
@@ -54,7 +63,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                DeliveryOrderEntity order = convertAndSaveOrder(line, LocalDateTime.of(2021, 12, 15, 8, 0));
+                convertAndSaveOrder(line, LocalDateTime.of(2021, 12, 15, 8, 0));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -239,7 +248,6 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     public Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination(List<DeliveryOrderEntity> listToMap) {
 
         Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
-
         for (DeliveryOrderEntity order : listToMap) {
             if (!mapByDestination.containsKey(order.getOrderDestination())) {
                 mapByDestination.put(order.getOrderDestination(), new ArrayList<>());
@@ -253,12 +261,30 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> shippingMap, GlobalData globalData) {
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
-
         for (DestinationEntity destination : shippingMap.keySet()) {
-            executor.execute(new Task(shippingMap.get(destination), destination, globalData, this));
+            executor.execute(new Task(shippingMap.get(destination), destination, globalData, this, globalData.getCurrentDate()));
         }
         executor.shutdown();
     }
+
+    @Async
+    public synchronized void updateGlobalData(List<DeliveryOrderEntity> ordersToDeliver, LocalDateTime date) {
+        for (DeliveryOrderEntity order : ordersToDeliver) {
+
+            order = getDeliveryOrderRepository().findById(order.getId()).get();
+            if (order.getOrderStatus() != OrderStatus.CANCELED) {
+
+                order.setOrderStatus(OrderStatus.DELIVERED);
+                modifyOrderDetails(order, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+
+                if (!globalData.getProfitByDayMap().containsKey(date.toLocalDate())) {
+                    globalData.getProfitByDayMap().put(date.toLocalDate(), new AtomicInteger());
+                }
+                globalData.getProfitByDayMap().get(date.toLocalDate()).addAndGet(order.getOrderDestination().getDistance());
+            }
+        }
+    }
+
 }
 
 

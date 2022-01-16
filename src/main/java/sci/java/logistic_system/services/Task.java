@@ -8,6 +8,9 @@ import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.OrderStatus;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -18,12 +21,14 @@ public class Task extends AbstractJpaDaoService implements Runnable {
     private String deliveryDriverNumber;
     private GlobalData globalData;
     private DeliveryOrderService deliveryOrderService;
+    private LocalDateTime date;
 
-    public Task(List<DeliveryOrderEntity> ordersToDeliver, DestinationEntity destination, GlobalData globalData, DeliveryOrderService deliveryOrderService) {
+    public Task(List<DeliveryOrderEntity> ordersToDeliver, DestinationEntity destination, GlobalData globalData, DeliveryOrderService deliveryOrderService, LocalDateTime date) {
         this.ordersToDeliver = ordersToDeliver;
         this.destination = destination;
         this.globalData = globalData;
         this.deliveryOrderService = deliveryOrderService;
+        this.date = date;
     }
 
     @Override
@@ -32,29 +37,12 @@ public class Task extends AbstractJpaDaoService implements Runnable {
 
         System.out.println("Delivery driver nr " + deliveryDriverNumber + " started deliveries for " + destination.getDestinationName());
         try {
-            Thread.sleep(10L * destination.getDistance());
-//            Thread.sleep(1000L * destination.getDistance());
+            Thread.sleep(1000L * destination.getDistance());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         System.out.println("Delivery driver nr " + deliveryDriverNumber + " completed " + ordersToDeliver.size() + " deliveries for " + destination.getDestinationName());
-        updateGlobalData();
+        deliveryOrderService.updateGlobalData(ordersToDeliver,date);
     }
 
-    @Async
-    private void updateGlobalData() {
-        for (DeliveryOrderEntity order : ordersToDeliver) {
-            order = deliveryOrderService.getDeliveryOrderRepository().findById(order.getId()).get();
-            if (order.getOrderStatus() != OrderStatus.CANCELED) {
-
-                order.setOrderStatus(OrderStatus.DELIVERED);
-                deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
-
-                if (!globalData.getProfitByDayMap().containsKey(globalData.getCurrentDate().toLocalDate())) {
-                    globalData.getProfitByDayMap().put(globalData.getCurrentDate().toLocalDate(), new AtomicInteger());
-                }
-                globalData.getProfitByDayMap().get(globalData.getCurrentDate().toLocalDate()).addAndGet(order.getOrderDestination().getDistance());
-            }
-        }
-    }
 }

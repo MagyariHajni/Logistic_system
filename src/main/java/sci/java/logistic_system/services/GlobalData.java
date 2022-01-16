@@ -1,5 +1,6 @@
 package sci.java.logistic_system.services;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
@@ -8,7 +9,7 @@ import sci.java.logistic_system.domain.ThymeleafBindingObject;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ public class GlobalData {
     public LocalDateTime getCurrentDate() {
         return currentDate;
     }
+
     public void setCurrentDate(LocalDateTime currentDate) {
         this.currentDate = currentDate;
     }
@@ -33,6 +35,7 @@ public class GlobalData {
     public List<DeliveryOrderEntity> getCurrentViewOrderList() {
         return currentViewOrderList;
     }
+
     public void setCurrentViewOrderList(List<DeliveryOrderEntity> currentViewOrderList) {
         this.currentViewOrderList = currentViewOrderList;
     }
@@ -41,16 +44,11 @@ public class GlobalData {
         return profitByDayMap;
     }
 
-    public void setProfitByDayMap(Map<LocalDate, AtomicInteger> profitByDayMap) {
-        this.profitByDayMap = profitByDayMap;
-    }
-
-    public void setCommonModelAttributes(Model model){
+    public void setCommonModelAttributes(Model model) {
         model.addAttribute("selectedlist", new ThymeleafBindingObject());
         model.addAttribute("orders", getCurrentViewOrderList());
         model.addAttribute("currentdate", getCurrentDate().toLocalDate());
         model.addAttribute("statuses", OrderStatus.values());
     }
-
 
 }
