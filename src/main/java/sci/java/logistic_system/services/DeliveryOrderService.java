@@ -237,7 +237,9 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination(List<DeliveryOrderEntity> listToMap) {
+
         Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
+
         for (DeliveryOrderEntity order : listToMap) {
             if (!mapByDestination.containsKey(order.getOrderDestination())) {
                 mapByDestination.put(order.getOrderDestination(), new ArrayList<>());
@@ -249,7 +251,9 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
 
     public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> shippingMap, GlobalData globalData) {
+
         ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
+
         for (DestinationEntity destination : shippingMap.keySet()) {
             executor.execute(new Task(shippingMap.get(destination), destination, globalData, this));
         }

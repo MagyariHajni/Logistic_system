@@ -6,6 +6,7 @@ import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.OrderStatus;
 import sci.java.logistic_system.domain.ThymeleafBindingObject;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -19,7 +20,7 @@ public class GlobalData {
 
     LocalDateTime currentDate = LocalDateTime.of(2021, 12, 15, 8, 0);
     List<DeliveryOrderEntity> currentViewOrderList;
-    Map<LocalDateTime, AtomicInteger> profitByDayMap = Collections.synchronizedMap(new HashMap<>());
+    Map<LocalDate, AtomicInteger> profitByDayMap = Collections.synchronizedMap(new HashMap<>());
 
 
     public LocalDateTime getCurrentDate() {
@@ -36,10 +37,11 @@ public class GlobalData {
         this.currentViewOrderList = currentViewOrderList;
     }
 
-    public Map<LocalDateTime, AtomicInteger> getProfitByDayMap() {
+    public Map<LocalDate, AtomicInteger> getProfitByDayMap() {
         return profitByDayMap;
     }
-    public void setProfitByDayMap(Map<LocalDateTime, AtomicInteger> profitByDayMap) {
+
+    public void setProfitByDayMap(Map<LocalDate, AtomicInteger> profitByDayMap) {
         this.profitByDayMap = profitByDayMap;
     }
 

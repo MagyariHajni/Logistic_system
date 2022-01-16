@@ -26,7 +26,7 @@
     <span th:text="${{#temporals.format(currentdate, 'dd-MM-yyyy')} +': Delivering '+ {#lists.size(orderstodeliver)} + ' order(s)'}"
           style="text-align:left; font-size: 25px"></span>
 
-    <ul >
+    <ul>
       <li th:each="entry : ${mappedorders}">
         <h4><span th:text="${#lists.size(entry.value)}"></span> order(s) to deliver to <span th:text="${entry.key.destinationName}"> </span></h4>
       </li>

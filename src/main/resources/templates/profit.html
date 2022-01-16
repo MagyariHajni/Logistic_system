@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head lang="en">
+
+    <title>Profit</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen"/>
+
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
+            th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+
+    <link href="../static/css/spring-core.css"
+          th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
+</head>
+<body>
+<div class="container">
+
+    <div style="font-size: 30px">
+        <label>Date: </label>
+        <label th:text="${#temporals.format(currentdate, 'dd-MM-yyyy')}"> </label>
+
+    </div>
+
+    <div style="font-size: 30px">
+        <label>Profit: </label>
+        <label th:text="${profit}"> </label>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+        <a href="/order/" class="btn btn-default" style="color:#337ab7">Back to orders list</a>
+    </div>
+
+</div>
+
+
+</body>
+</html>
