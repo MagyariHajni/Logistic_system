@@ -30,12 +30,12 @@ public class OrderStatusService extends AbstractJpaDaoService {
         return listAll().stream().filter(orderStatusEntity -> orderStatusEntity.getOrderId()==orderId).collect(Collectors.toList());
     }
 
-    public void saveOrderStatus(DeliveryOrderEntity order){
-        OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
-        orderStatusEntity.setOrderId(order.getId());
-        orderStatusEntity.setOrderStatus(OrderStatus.NEW);
-        orderStatusEntity.setOrderStatusDate(LocalDateTime.of(2021, 12, 15, 8, 0));
-        orderStatusRepository.save(orderStatusEntity);
-    }
+//    public void saveOrderStatus(DeliveryOrderEntity order){
+//        OrderStatusEntity orderStatusEntity = new OrderStatusEntity();
+//        orderStatusEntity.setOrderId(order.getId());
+//        orderStatusEntity.setOrderStatus(OrderStatus.NEW);
+//        orderStatusEntity.setOrderStatusDate(LocalDateTime.of(2021, 12, 15, 8, 0));
+//        orderStatusRepository.save(orderStatusEntity);
+//    }
 
 }

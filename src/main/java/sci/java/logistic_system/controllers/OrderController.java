@@ -4,21 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import sci.java.logistic_system.domain.DeliveryOrderData;
-import sci.java.logistic_system.domain.DeliveryOrderEntity;
-import sci.java.logistic_system.domain.OrderStatus;
-import sci.java.logistic_system.domain.ThymeleafBindingObject;
+import sci.java.logistic_system.domain.*;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
 import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.GlobalData;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -66,16 +63,13 @@ public class OrderController {
     @GetMapping(value = "order/list")
     public String listOrders(@RequestParam(required = false) LocalDateTime date,
                              Model model) {
-
         if (!Objects.isNull(date)) {
-            LocalDate dateDate = date.toLocalDate();
             List<DeliveryOrderEntity> listOfOrdersForToday = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
-            globalData.setCurrentViewOrderList(
-                    listOfOrdersForToday.stream()
-                            .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateDate))
-                            .collect(Collectors.toList()));
-
+            globalData.setCurrentViewOrderList(deliveryOrderService.filterOrdersByDate(listOfOrdersForToday, date));
         }
+        List<DeliveryOrderEntity> updatedCurrentView
+                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
+        globalData.setCurrentViewOrderList(updatedCurrentView);
         globalData.setCommonModelAttributes(model);
         return "orders/orders";
     }
@@ -125,8 +119,7 @@ public class OrderController {
     @GetMapping("order/{id}")
     public String getOrder(@PathVariable Integer id, Model model) {
         model.addAttribute("order",
-                deliveryOrderRepository.findById(id).isPresent() ?
-                        deliveryOrderRepository.findById(id).get() : null);
+                deliveryOrderRepository.findById(id).isPresent() ? deliveryOrderRepository.findById(id).get() : null);
 
         globalData.setCommonModelAttributes(model);
         model.addAttribute("orderstatuses", orderStatusRepository.findOrderStatusesById(id));
@@ -135,8 +128,7 @@ public class OrderController {
 
     @GetMapping("order/edit/{id}")
     public String editOrder(@PathVariable Integer id, Model model) {
-        model.addAttribute("order", deliveryOrderRepository.findById(id).isPresent() ?
-                deliveryOrderRepository.findById(id).get() : null);
+        model.addAttribute("order", deliveryOrderRepository.findById(id).isPresent() ? deliveryOrderRepository.findById(id).get() : null);
         globalData.setCommonModelAttributes(model);
         model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
         return "orders/orderform";
@@ -238,6 +230,32 @@ public class OrderController {
         return "orders/addedorders";
     }
 
+    @GetMapping("/shipping/new-day")
+    public String shippingToday(Model model) {
+        List<DeliveryOrderEntity> shippingList = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
+        shippingList = shippingList.stream()
+                .filter(order -> order.getDeliveryDate().toLocalDate().equals(globalData.getCurrentDate().toLocalDate()))
+                .filter(order -> order.getOrderStatus().equals(OrderStatus.NEW)).collect(Collectors.toList());
+
+        shippingList.forEach(order -> order.setOrderStatus(OrderStatus.DELIVERING));
+        shippingList.forEach(order -> deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate()));
+
+        shippingList = deliveryOrderService.filterOrdersByStatus((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), OrderStatus.DELIVERING.name());
+        Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = deliveryOrderService.mapByDestination(shippingList);
+
+        model.addAttribute("orderstodeliver", shippingList);
+        model.addAttribute("mappedorders", mapByDestination);
+
+        deliveryOrderService.startShipping(mapByDestination, globalData);
+
+        List<DeliveryOrderEntity> updatedCurrentView
+                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
+        globalData.setCurrentViewOrderList(updatedCurrentView);
+        globalData.setCommonModelAttributes(model);
+        return "orders/deliveringorders";
+    }
+
+
     @GetMapping({"/order/next-day"})
     public String newDay(Model model) {
         globalData.setCurrentDate(globalData.getCurrentDate().plusDays(1));
@@ -248,7 +266,7 @@ public class OrderController {
 
     @GetMapping({"/order/previous-day"}) //previous day need to be >=with current day
     public String previousDay(Model model) {
-        if (!globalData.getCurrentDate().minusDays(1).isBefore(LocalDateTime.of(2021, 12, 15, 8, 0))) {
+        if (!globalData.getCurrentDate().toLocalDate().minusDays(1).isBefore(LocalDateTime.of(2021, 12, 15, 8, 0).toLocalDate())) {
             globalData.setCurrentDate(globalData.getCurrentDate().minusDays(1));
         }
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());

@@ -17,10 +17,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,12 +35,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
-
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
-
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
@@ -50,19 +48,13 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         return deliveryOrderRepository;
     }
 
-//    public OrderReq addOrder(OrderReq orderReq) {
-//        OrderStatusEntity orderStatusEntity = OrderConverter.fromOrderReq(orderReq);
-//        OrderStatusEntity savedOrder = orderStatusRepository.save(orderStatusEntity);
-//        return OrderConverter.fromOrderStatusEntity(savedOrder);
-//    }
-
     public void loadInitialOrders() {
         Path fileIn = new File("src/main/resources/orders.csv").toPath();
 
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                DeliveryOrderEntity order = convertAndSaveOrder(line,LocalDateTime.of(2021, 12, 15, 8, 0));
+                DeliveryOrderEntity order = convertAndSaveOrder(line, LocalDateTime.of(2021, 12, 15, 8, 0));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -146,12 +138,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         }
     }
 
-    public DeliveryOrderEntity convertAndSaveOrder(String input,LocalDateTime date) {
+    public DeliveryOrderEntity convertAndSaveOrder(String input, LocalDateTime date) {
         String[] inputData = input.split(",");
         String[] deliveryDate = inputData[1].split("-");
-
         DeliveryOrderEntity order = new DeliveryOrderEntity();
-
         order.setOrderDestination(destinationRepository.findDestinationEntityByDestinationName(inputData[0]));
         order.setDeliveryDate(LocalDateTime.of(
                 Integer.parseInt(deliveryDate[2]),
@@ -160,7 +150,6 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                 8, 0));
         order.setOrderStatus(OrderStatus.NEW);
         order.setLastUpDated(date);
-//        order.setLastUpDated(LocalDateTime.of(2021, 12, 15, 8, 0));
         deliveryOrderRepository.save(order);
         orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.NEW, date);
         return order;
@@ -170,7 +159,6 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
             (LocalDateTime date, String destinationName, LocalDateTime globalDate) {
 
         List<DeliveryOrderEntity> listOfOrdersForToday = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
-
         LocalDate dateDate;
         List<DestinationEntity> destinationsList = (List<DestinationEntity>) destinationRepository.findAll();
         boolean foundDestination = destinationsList.stream().anyMatch(dest -> dest.getDestinationName().equals(destinationName));
@@ -240,7 +228,6 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     public List<DeliveryOrderEntity> updateView(List<DeliveryOrderEntity> allOrders, List<DeliveryOrderEntity> listToCheck) {
         List<DeliveryOrderEntity> updatedList = new ArrayList<>();
         for (DeliveryOrderEntity order : listToCheck) {
-
             if (!allOrders.contains(order)) {
                 order = deliveryOrderRepository.findById(order.getId()).get();
             }
@@ -249,7 +236,26 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         return updatedList;
     }
 
+    public Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination(List<DeliveryOrderEntity> listToMap) {
+        Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
+        for (DeliveryOrderEntity order : listToMap) {
+            if (!mapByDestination.containsKey(order.getOrderDestination())) {
+                mapByDestination.put(order.getOrderDestination(), new ArrayList<>());
+            }
+            mapByDestination.get(order.getOrderDestination()).add(order);
+        }
+        return mapByDestination;
+    }
 
+
+    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> shippingMap, GlobalData globalData) {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
+        for (DestinationEntity destination : shippingMap.keySet()) {
+            executor.execute(new Task(shippingMap.get(destination), destination, globalData, this));
+        }
+        executor.shutdown();
+    }
 }
+
 
 
