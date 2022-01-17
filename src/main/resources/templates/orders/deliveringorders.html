@@ -2,40 +2,49 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head lang="en">
 
-  <title>List of orders with DELIVERING status</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>List of orders with DELIVERING status</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-  <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
-        th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
-        rel="stylesheet" media="screen"/>
+    <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+          th:href="@{/webjars/bootstrap/3.3.5/css/bootstrap.min.css}"
+          rel="stylesheet" media="screen"/>
 
-  <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
-          th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+    <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
+            th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
 
-  <link href="../static/css/spring-core.css"
-        th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
+    <link href="../static/css/spring-core.css"
+          th:href="@{css/spring-core.css}" rel="stylesheet" media="screen"/>
 </head>
 <body>
 <div class="container">
 
-  <div th:if="${#maps.isEmpty(mappedorders)}">
-    <h3>No available orders to deliver today.</h3>
-  </div>
+    <div th:if="${not #lists.isEmpty(undelivered)}">
+        <h3 th:text="${{#lists.size(undelivered)} + ' undelivered orders from previous date, cancel or ship them'}" style="text-align:left; font-size: 25px"></h3>
+    </div>
 
-  <div th:if="!${#maps.isEmpty(mappedorders)}">
+
+    <div th:if="${#lists.isEmpty(undelivered)}">
+        <div th:if="${#maps.isEmpty(mappedorders)}">
+            <h3>No available orders to deliver today.</h3>
+        </div>
+
+        <div th:if="!${#maps.isEmpty(mappedorders)}">
     <span th:text="${{#temporals.format(currentdate, 'dd-MM-yyyy')} +': Delivering '+ {#lists.size(orderstodeliver)} + ' order(s)'}"
           style="text-align:left; font-size: 25px"></span>
 
-    <ul>
-      <li th:each="entry : ${mappedorders}">
-        <h4><span th:text="${#lists.size(entry.value)}"></span> order(s) to deliver to <span th:text="${entry.key.destinationName}"> </span></h4>
-      </li>
-    </ul>
-  </div>
+            <ul>
+                <li th:each="entry : ${mappedorders}">
+                    <h4><span th:text="${#lists.size(entry.value)}"></span> order(s) to deliver to <span
+                            th:text="${entry.key.destinationName}"> </span></h4>
+                </li>
+            </ul>
+        </div>
+    </div>
 
-  <div class="row" style="margin-top:10px">
-    <a href="/order/" class="btn btn-default" style="color:#337ab7">Back to orders list</a>
-  </div>
+
+    <div class="row" style="margin-top:10px">
+        <a href="/order/" class="btn btn-default" style="color:#337ab7">Back to orders list</a>
+    </div>
 
 </div>
 

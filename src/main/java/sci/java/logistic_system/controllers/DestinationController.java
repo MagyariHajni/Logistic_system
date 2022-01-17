@@ -122,6 +122,7 @@ public class DestinationController {
         List<DeliveryOrderEntity> updatedCurrentView
                 = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
         globalData.setCurrentViewOrderList(updatedCurrentView);
+
         destinationRepository.deleteById(id);
         return "redirect:/destinations/";
     }

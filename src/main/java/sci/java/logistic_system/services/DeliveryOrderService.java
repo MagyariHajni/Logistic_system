@@ -19,9 +19,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -84,27 +81,22 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public void modifyOrderDetails(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date, String deletedDestinationName) {
-        order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
 
         if (order.getOrderDestination() == null) {
             modifyOrderWithDeletedDestination(order, orderPreviousData, date, deletedDestinationName);
         } else {
             modifyOrderWithChangedDestination(order, orderPreviousData, date);
-            modifyOrderStatusAndComment(order, orderPreviousData);
+            modifyOrderStatusAndComment(order, orderPreviousData, date);
         }
         deliveryOrderRepository.save(order);
     }
 
     public void modifyOrderWithDeletedDestination(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date, String deletedDestinationName) {
-        if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
-            order.setDestinationComment("Initial destination: " + deletedDestinationName + ", "
-                    + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                    + " Destination not available anymore");
-        } else {
-            order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
-                    + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                    + " Destination not available anymore");
-        }
+        order.setDestinationComment(orderPreviousData.getDestinationComment() + " // "
+                + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) +
+                " Initial destination: " + deletedDestinationName + " - not available anymore");
+
+        order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
 
         if (order.getOrderStatus() != OrderStatus.DELIVERED) {
             order.setOrderStatus(OrderStatus.CANCELED);
@@ -113,25 +105,27 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public void modifyOrderWithChangedDestination(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date) {
-        String initialComment = "Initial destination: " + orderPreviousData.getOrderDestination().getDestinationName();
         if (!Objects.equals(order.getOrderDestination(), orderPreviousData.getOrderDestination())) {
-            if (Objects.equals(orderPreviousData.getDestinationComment(), "")) {
-                order.setDestinationComment(initialComment + ", "
-                        + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                        + " Changed destination: "
-                        + order.getOrderDestination().getDestinationName());
-            } else {
-                order.setDestinationComment(orderPreviousData.getDestinationComment() + ", "
-                        + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                        + " Changed destination: " + order.getOrderDestination().getDestinationName());
-            }
+            order.setDestinationComment(orderPreviousData.getDestinationComment() + " // "
+                    + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    + " Changed destination: from " + orderPreviousData.getOrderDestination().getDestinationName() + " to " +
+                    order.getOrderDestination().getDestinationName());
         }
     }
 
-    public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData) {
-        if(Objects.isNull(order.getOrderStatus())){
+    public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date) {
+        if (Objects.isNull(order.getOrderStatus())) {
             order.setOrderStatus(OrderStatus.NEW);
         }
+
+        if (!Objects.equals(order.getDeliveryDate(), orderPreviousData.getDeliveryDate())) {
+            order.setDestinationComment(orderPreviousData.getDestinationComment() + " // "
+                    + LocalDateTime.of(date.toLocalDate(), LocalTime.now()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    + " Changed delivery date: from " + orderPreviousData.getDeliveryDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + " to "
+                    + order.getDeliveryDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        }
+
+        order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
         orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
         if (Objects.equals(order.getDestinationComment(), "")) {
             order.setDestinationComment(orderPreviousData.getDestinationComment());
@@ -140,13 +134,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
     public void cancelSelectedOrders(List<DeliveryOrderEntity> ordersToCancel, LocalDateTime date) {
         for (DeliveryOrderEntity order : ordersToCancel) {
-            if (!order.getOrderStatus().equals(OrderStatus.DELIVERED)
-                    && !order.getOrderStatus().equals(OrderStatus.CANCELED)) {
-                order.setOrderStatus(OrderStatus.CANCELED);
-                order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
-                deliveryOrderRepository.save(order);
-                orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.CANCELED, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
-            }
+            order.setOrderStatus(OrderStatus.CANCELED);
+            order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+            deliveryOrderRepository.save(order);
+            orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.CANCELED, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
         }
     }
 
@@ -276,7 +267,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     private void updateGlobalMaps(LocalDateTime date, DeliveryOrderEntity order) {
         if (!globalData.getProfitByDayMap().containsKey(date.toLocalDate())) {
             globalData.getProfitByDayMap().put(date.toLocalDate(), new AtomicInteger());
-            globalData.getDeliveriesByDayMap().put(date.toLocalDate(),new AtomicInteger());
+            globalData.getDeliveriesByDayMap().put(date.toLocalDate(), new AtomicInteger());
         }
         globalData.getProfitByDayMap().get(date.toLocalDate()).addAndGet(order.getOrderDestination().getDistance());
         globalData.getDeliveriesByDayMap().get(date.toLocalDate()).addAndGet(1);

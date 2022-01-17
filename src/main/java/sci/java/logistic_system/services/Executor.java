@@ -17,9 +17,8 @@ public class Executor {
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
 
     public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> shippingMap, LocalDateTime date, DeliveryOrderService deliveryOrderService) {
-
         for (DestinationEntity destination : shippingMap.keySet()) {
-            System.out.println(executor.getQueue().size());
+//            System.out.println(executor.getQueue().size());
             executor.execute(new Task(shippingMap.get(destination), destination, deliveryOrderService, date));
         }
     }

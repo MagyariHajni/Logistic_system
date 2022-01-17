@@ -17,9 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Controller
@@ -36,18 +33,22 @@ public class OrderController {
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
+
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
+
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
+
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
     }
+
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
@@ -73,7 +74,7 @@ public class OrderController {
             globalData.setCurrentViewOrderList(deliveryOrderService.filterOrdersByDate(listOfOrdersForToday, date));
         }
 
-        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
         return "orders/orders";
     }
 
@@ -86,7 +87,7 @@ public class OrderController {
         List<DeliveryOrderEntity> filteredOrdersList
                 = deliveryOrderService.filterOrdersByDateAndDestination(date, destination, globalData.getCurrentDate());
 
-        globalData.updateAndSetCurrentView(model,filteredOrdersList,(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
+        globalData.updateAndSetCurrentView(model, filteredOrdersList, (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
         if (!Objects.isNull(destination)) {
             model.addAttribute("destinationtofind", destination);
         }
@@ -112,7 +113,7 @@ public class OrderController {
             filteredOrdersList = deliveryOrderService.filterOrdersByStatus(filteredOrdersList, status);
         }
 
-        globalData.updateAndSetCurrentView(model,filteredOrdersList,(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
+        globalData.updateAndSetCurrentView(model, filteredOrdersList, (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
         if (!Objects.isNull(destination)) {
             model.addAttribute("destinationtofind", destination);
         }
@@ -138,7 +139,7 @@ public class OrderController {
     }
 
     @PostMapping(value = "/order")
-    public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order,Model model) {
+    public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order, Model model) {
 
         if (order.getDeliveryDate().isBefore(globalData.getCurrentDate())) {
 //            TODO throw,console log, file log order couldn 't be modified, delivery date before current date
@@ -148,8 +149,7 @@ public class OrderController {
             deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
         }
 
-        globalData.updateAndSetCurrentView(model,globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
-
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
         return "redirect:order/" + order.getId();
     }
 
@@ -178,8 +178,7 @@ public class OrderController {
         }
         deliveryOrderService.cancelSelectedOrders(ordersToCancel, globalData.getCurrentDate());
         model.addAttribute("canceledorders", ordersToCancel);
-
-        globalData.updateAndSetCurrentView(model,globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
         return "orders/canceledorders";
     }
 
@@ -257,24 +256,40 @@ public class OrderController {
     }
 
     @GetMapping("/shipping/new-day")
-    public String shippingToday(Model model) {
+    public String shippingToday(@RequestParam(required = false) LocalDateTime date,
+                                Model model) {
+
+        LocalDateTime dateToShip;
+        if (!Objects.isNull(date)) {
+            dateToShip = date;
+        } else {
+            dateToShip = globalData.getCurrentDate().plusDays(1);
+        }
+
         List<DeliveryOrderEntity> shippingList = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
 
-        shippingList = shippingList.stream()
-                .filter(order -> order.getDeliveryDate().toLocalDate().equals(globalData.getCurrentDate().toLocalDate()))
+        List<DeliveryOrderEntity> undelivered = shippingList.stream()
+                .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateToShip.toLocalDate().minusDays(1)))
                 .filter(order -> order.getOrderStatus().equals(OrderStatus.NEW)).collect(Collectors.toList());
+        Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
 
-        shippingList.forEach(order -> order.setOrderStatus(OrderStatus.DELIVERING));
-        shippingList.forEach(order -> deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate()));
+        if (undelivered.isEmpty()) {
+            shippingList = shippingList.stream()
+                    .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateToShip.toLocalDate()))
+                    .filter(order -> order.getOrderStatus().equals(OrderStatus.NEW)).collect(Collectors.toList());
+            shippingList.forEach(order -> order.setOrderStatus(OrderStatus.DELIVERING));
+            shippingList.forEach(order -> deliveryOrderService.modifyOrderDetails(order, dateToShip));
 
-        Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = deliveryOrderService.mapByDestination(shippingList);
+            mapByDestination = deliveryOrderService.mapByDestination(shippingList);
+            startShipping(mapByDestination, dateToShip);
+        }
 
+        model.addAttribute("undelivered", undelivered);
         model.addAttribute("orderstodeliver", shippingList);
         model.addAttribute("mappedorders", mapByDestination);
 
-        startShipping(mapByDestination, globalData.getCurrentDate());
-
-        globalData.updateAndSetCurrentView(model,globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
+        model.addAttribute("currentdate", dateToShip);
         return "orders/deliveringorders";
     }
 
@@ -299,7 +314,7 @@ public class OrderController {
             }
         }
 
-        model.addAttribute("delivered",globalData.getDeliveriesByDayMap().get(untilDate));
+        model.addAttribute("delivered", globalData.getDeliveriesByDayMap().get(untilDate));
         model.addAttribute("currentdate", untilDate);
         model.addAttribute("profit", profit);
         return "profit";
@@ -325,8 +340,8 @@ public class OrderController {
 
 
     @Async
-    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination, LocalDateTime date){
-        executor.startShipping(mapByDestination, date,deliveryOrderService);
+    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination, LocalDateTime date) {
+        executor.startShipping(mapByDestination, date, deliveryOrderService);
     }
 
     private DeliveryOrderEntity addAndSaveOrder(DestinationEntity destination, String dateToConvert) {

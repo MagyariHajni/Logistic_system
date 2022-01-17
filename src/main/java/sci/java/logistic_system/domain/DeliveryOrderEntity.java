@@ -21,6 +21,7 @@ public class DeliveryOrderEntity {
     private LocalDateTime deliveryDate;
     private OrderStatus orderStatus;
     private LocalDateTime lastUpDated;
+    @Column(length = 500)
     private String destinationComment ="";
 
     public String getDestinationComment() {
@@ -70,11 +71,11 @@ public class DeliveryOrderEntity {
         if (this == o) return true;
         if (!(o instanceof DeliveryOrderEntity)) return false;
         DeliveryOrderEntity that = (DeliveryOrderEntity) o;
-        return Objects.equals(getId(), that.getId()) && Objects.equals(getOrderDestination(), that.getOrderDestination()) && Objects.equals(getDeliveryDate(), that.getDeliveryDate()) && getOrderStatus() == that.getOrderStatus();
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getOrderDestination(), that.getOrderDestination()) && Objects.equals(getDeliveryDate(), that.getDeliveryDate());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getOrderDestination(), getDeliveryDate(), getOrderStatus());
+        return Objects.hash(getId(), getOrderDestination(), getDeliveryDate());
     }
 }

@@ -9,6 +9,7 @@ import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
+import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.GlobalData;
 
 import java.util.Collections;
@@ -21,27 +22,32 @@ import java.util.stream.Collectors;
 public class SorterController {
     DeliveryOrderRepository deliveryOrderRepository;
     DestinationRepository destinationRepository;
+    DeliveryOrderService deliveryOrderService;
     GlobalData globalData;
 
     @Autowired
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
-
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
-
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
+    @Autowired
+    public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
+        this.deliveryOrderService = deliveryOrderService;
+    }
+
 
     @RequestMapping({"/order/sort/byid"})
     public String sortOrdersById(@RequestParam(required = false) String sortDir,
                                  Model model) {
-        globalData.setCommonModelAttributes(model);
+
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
                 .sorted(Comparator.comparing(DeliveryOrderEntity::getId))
@@ -55,7 +61,8 @@ public class SorterController {
     public String sortOrdersByDestination(@RequestParam(required = false) String sortDir,
                                           Model model) {
 
-        globalData.setCommonModelAttributes(model);
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
+
         List<DeliveryOrderEntity> deletedDestinationOrders = globalData.getCurrentViewOrderList().stream()
                 .filter(order -> order.getOrderDestination() == null)
                 .collect(Collectors.toList());
@@ -73,7 +80,8 @@ public class SorterController {
     public String sortOrdersByOrderStatus(@RequestParam(required = false) String sortDir,
                                           Model model) {
 
-        globalData.setCommonModelAttributes(model);
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
+
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
                 .sorted(Comparator.comparing(o1 -> o1.getOrderStatus().name()))
                 .collect(Collectors.toList());
@@ -85,8 +93,8 @@ public class SorterController {
     @RequestMapping({"/order/sort/bydeliverydate"})
     public String sortOrdersByDeliveryDate(@RequestParam(required = false) String sortDir,
                                            Model model) {
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
-        globalData.setCommonModelAttributes(model);
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
                 .sorted(Comparator.comparing(DeliveryOrderEntity::getDeliveryDate))
                 .collect(Collectors.toList());
@@ -99,8 +107,8 @@ public class SorterController {
     @RequestMapping({"/order/sort/bylastupdated"})
     public String sortOrdersByLastUpdated(@RequestParam(required = false) String sortDir,
                                           Model model) {
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
-        globalData.setCommonModelAttributes(model);
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
                 .sorted(Comparator.comparing(DeliveryOrderEntity::getLastUpDated))
                 .collect(Collectors.toList());

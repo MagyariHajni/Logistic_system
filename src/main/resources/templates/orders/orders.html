@@ -60,7 +60,7 @@
                 <a href="/order/new" class="btn btn-default"
                    style="color:#337ab7;width: 120px;margin-bottom:10px">Add Orders</a>
 
-                <a href="/shipping/new-day" class="btn btn-default"
+                <a th:href="${'/shipping/new-day?date='+{#temporals.format(currentdate, 'dd-MM-yyyy')}}" class="btn btn-default"
                    style="color:#337ab7;width: 120px;margin-bottom:10px">Ship
                     today</a>
 
