@@ -129,10 +129,9 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData) {
-        if(order.getOrderStatus() == OrderStatus.DELIVERED){
-            updateGlobalMaps(order.getLastUpDated(),order);
+        if(Objects.isNull(order.getOrderStatus())){
+            order.setOrderStatus(OrderStatus.NEW);
         }
-
         orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
         if (Objects.equals(order.getDestinationComment(), "")) {
             order.setDestinationComment(orderPreviousData.getDestinationComment());
