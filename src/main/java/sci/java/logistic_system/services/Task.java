@@ -1,32 +1,22 @@
 package sci.java.logistic_system.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
-import sci.java.logistic_system.domain.OrderStatus;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class Task extends AbstractJpaDaoService implements Runnable {
+public class Task implements Runnable {
     private List<DeliveryOrderEntity> ordersToDeliver;
     private DestinationEntity destination;
     private String deliveryDriverNumber;
-    private GlobalData globalData;
     private DeliveryOrderService deliveryOrderService;
     private LocalDateTime date;
 
-    public Task(List<DeliveryOrderEntity> ordersToDeliver, DestinationEntity destination, GlobalData globalData, DeliveryOrderService deliveryOrderService, LocalDateTime date) {
+    public Task(List<DeliveryOrderEntity> ordersToDeliver, DestinationEntity destination, DeliveryOrderService deliveryOrderService, LocalDateTime date) {
         this.ordersToDeliver = ordersToDeliver;
         this.destination = destination;
-        this.globalData = globalData;
         this.deliveryOrderService = deliveryOrderService;
         this.date = date;
     }

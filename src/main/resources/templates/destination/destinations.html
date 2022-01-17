@@ -42,13 +42,13 @@
             <!--            bootstrap class for table-->
             <tr>
                 <th>Id
-                    <a href="/destinations/sort/byid" class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                    <a th:href="@{'/destinations/sort/byid?sortDir='+ ${sortDir}}" class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                 </th>
                 <th >Destination name
-                    <a href="/destinations/sort/byname" class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                    <a th:href="@{'/destinations/sort/byname?sortDir='+ ${sortDir}}" class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                 </th>
                 <th>Distance
-                    <a href="/destinations/sort/bydistance" class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
+                    <a th:href="@{'/destinations/sort/bydistance?sortDir='+ ${sortDir}}" class="btn btn-default" style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                 </th>
                 <th>View</th>
                 <th>Modify</th>

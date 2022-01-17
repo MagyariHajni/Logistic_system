@@ -88,25 +88,25 @@
                 <!--            bootstrap class for table-->
                 <tr>
                     <th>Id
-                        <a href="/order/sort/byid" class="btn btn-default"
+                        <a th:href="@{'/order/sort/byid?sortDir='+ ${sortDir}}" class="btn btn-default"
                            style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Destination
-                        <a href="/order/sort/bydestination" class="btn btn-default"
+                        <a th:href="@{'/order/sort/bydestination?sortDir='+ ${sortDir}}" class="btn btn-default"
                            style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Order status
 
-                        <a href="/order/sort/byorderstatus" class="btn btn-default"
+                        <a th:href="@{'/order/sort/byorderstatus?sortDir='+ ${sortDir}}" class="btn btn-default"
                            style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Delivery date
 
-                        <a href="/order/sort/bydeliverydate" class="btn btn-default"
+                        <a th:href="@{'/order/sort/bydeliverydate?sortDir='+ ${sortDir}}" class="btn btn-default"
                            style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
                     <th>Last updated
-                        <a href="/order/sort/bylastupdated" class="btn btn-default"
+                        <a th:href="@{'/order/sort/bylastupdated?sortDir='+ ${sortDir}}" class="btn btn-default"
                            style="margin: 5px; padding: 2px; height: 20px;font-size: 13px; text-align: left">⇅</a>
                     </th>
 

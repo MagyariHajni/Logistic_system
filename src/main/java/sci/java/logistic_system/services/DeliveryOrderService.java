@@ -129,6 +129,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public void modifyOrderStatusAndComment(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData) {
+        if(order.getOrderStatus() == OrderStatus.DELIVERED){
+            updateGlobalMaps(order.getLastUpDated(),order);
+        }
+
         orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
         if (Objects.equals(order.getDestinationComment(), "")) {
             order.setDestinationComment(orderPreviousData.getDestinationComment());
@@ -257,32 +261,26 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         return mapByDestination;
     }
 
-
-    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> shippingMap, GlobalData globalData) {
-
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 4, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
-        for (DestinationEntity destination : shippingMap.keySet()) {
-            executor.execute(new Task(shippingMap.get(destination), destination, globalData, this, globalData.getCurrentDate()));
-        }
-        executor.shutdown();
-    }
-
     @Async
     public synchronized void updateGlobalData(List<DeliveryOrderEntity> ordersToDeliver, LocalDateTime date) {
-        for (DeliveryOrderEntity order : ordersToDeliver) {
 
+        for (DeliveryOrderEntity order : ordersToDeliver) {
             order = getDeliveryOrderRepository().findById(order.getId()).get();
             if (order.getOrderStatus() != OrderStatus.CANCELED) {
-
                 order.setOrderStatus(OrderStatus.DELIVERED);
                 modifyOrderDetails(order, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
-
-                if (!globalData.getProfitByDayMap().containsKey(date.toLocalDate())) {
-                    globalData.getProfitByDayMap().put(date.toLocalDate(), new AtomicInteger());
-                }
-                globalData.getProfitByDayMap().get(date.toLocalDate()).addAndGet(order.getOrderDestination().getDistance());
+                updateGlobalMaps(date, order);
             }
         }
+    }
+
+    private void updateGlobalMaps(LocalDateTime date, DeliveryOrderEntity order) {
+        if (!globalData.getProfitByDayMap().containsKey(date.toLocalDate())) {
+            globalData.getProfitByDayMap().put(date.toLocalDate(), new AtomicInteger());
+            globalData.getDeliveriesByDayMap().put(date.toLocalDate(),new AtomicInteger());
+        }
+        globalData.getProfitByDayMap().get(date.toLocalDate()).addAndGet(order.getOrderDestination().getDistance());
+        globalData.getDeliveriesByDayMap().get(date.toLocalDate()).addAndGet(1);
     }
 
 }

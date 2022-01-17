@@ -10,12 +10,16 @@ import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
 import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.domain.repository.OrderStatusRepository;
 import sci.java.logistic_system.services.DeliveryOrderService;
+import sci.java.logistic_system.services.Executor;
 import sci.java.logistic_system.services.GlobalData;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Controller
@@ -25,31 +29,33 @@ public class OrderController {
     private OrderStatusRepository orderStatusRepository;
     private GlobalData globalData;
     private DeliveryOrderService deliveryOrderService;
+    private Executor executor;
 
 
     @Autowired
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
-
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
-
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
-
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
     }
-
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
+    }
+
+    @Autowired
+    public void setExecutor(Executor executor) {
+        this.executor = executor;
     }
 
     @GetMapping(value = "order/")
@@ -66,10 +72,8 @@ public class OrderController {
             List<DeliveryOrderEntity> listOfOrdersForToday = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
             globalData.setCurrentViewOrderList(deliveryOrderService.filterOrdersByDate(listOfOrdersForToday, date));
         }
-        List<DeliveryOrderEntity> updatedCurrentView
-                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
-        globalData.setCurrentViewOrderList(updatedCurrentView);
-        globalData.setCommonModelAttributes(model);
+
+        globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
         return "orders/orders";
     }
 
@@ -81,8 +85,8 @@ public class OrderController {
 
         List<DeliveryOrderEntity> filteredOrdersList
                 = deliveryOrderService.filterOrdersByDateAndDestination(date, destination, globalData.getCurrentDate());
-        globalData.setCurrentViewOrderList(filteredOrdersList);
-        globalData.setCommonModelAttributes(model);
+
+        globalData.updateAndSetCurrentView(model,filteredOrdersList,(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
         if (!Objects.isNull(destination)) {
             model.addAttribute("destinationtofind", destination);
         }
@@ -108,8 +112,7 @@ public class OrderController {
             filteredOrdersList = deliveryOrderService.filterOrdersByStatus(filteredOrdersList, status);
         }
 
-        globalData.setCurrentViewOrderList(filteredOrdersList);
-        globalData.setCommonModelAttributes(model);
+        globalData.updateAndSetCurrentView(model,filteredOrdersList,(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
         if (!Objects.isNull(destination)) {
             model.addAttribute("destinationtofind", destination);
         }
@@ -135,7 +138,7 @@ public class OrderController {
     }
 
     @PostMapping(value = "/order")
-    public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order) {
+    public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order,Model model) {
 
         if (order.getDeliveryDate().isBefore(globalData.getCurrentDate())) {
 //            TODO throw,console log, file log order couldn 't be modified, delivery date before current date
@@ -145,9 +148,7 @@ public class OrderController {
             deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
         }
 
-        List<DeliveryOrderEntity> updatedCurrentView
-                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
-        globalData.setCurrentViewOrderList(updatedCurrentView);
+        globalData.updateAndSetCurrentView(model,globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
 
         return "redirect:order/" + order.getId();
     }
@@ -178,11 +179,7 @@ public class OrderController {
         deliveryOrderService.cancelSelectedOrders(ordersToCancel, globalData.getCurrentDate());
         model.addAttribute("canceledorders", ordersToCancel);
 
-        List<DeliveryOrderEntity> updatedCurrentView
-                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
-        globalData.setCurrentViewOrderList(updatedCurrentView);
-        globalData.setCommonModelAttributes(model);
-
+        globalData.updateAndSetCurrentView(model,globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
         return "orders/canceledorders";
     }
 
@@ -275,19 +272,10 @@ public class OrderController {
         model.addAttribute("orderstodeliver", shippingList);
         model.addAttribute("mappedorders", mapByDestination);
 
-        startShipping(mapByDestination, globalData);
+        startShipping(mapByDestination, globalData.getCurrentDate());
 
-        List<DeliveryOrderEntity> updatedCurrentView
-                = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
-
-        globalData.setCurrentViewOrderList(updatedCurrentView);
-        globalData.setCommonModelAttributes(model);
+        globalData.updateAndSetCurrentView(model,globalData.getCurrentViewOrderList(),(List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(),deliveryOrderService);
         return "orders/deliveringorders";
-    }
-
-    @Async
-    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination, GlobalData globalData){
-        deliveryOrderService.startShipping(mapByDestination, globalData);
     }
 
     @GetMapping("actuator/info")
@@ -311,6 +299,7 @@ public class OrderController {
             }
         }
 
+        model.addAttribute("delivered",globalData.getDeliveriesByDayMap().get(untilDate));
         model.addAttribute("currentdate", untilDate);
         model.addAttribute("profit", profit);
         return "profit";
@@ -335,9 +324,10 @@ public class OrderController {
     }
 
 
-
-
-
+    @Async
+    public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination, LocalDateTime date){
+        executor.startShipping(mapByDestination, date,deliveryOrderService);
+    }
 
     private DeliveryOrderEntity addAndSaveOrder(DestinationEntity destination, String dateToConvert) {
         DeliveryOrderEntity savedOrder = null;

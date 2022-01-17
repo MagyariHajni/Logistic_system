@@ -37,6 +37,13 @@
         <label th:text="${{profit}+' LEI'}"> </label>
     </div>
 
+    <div style="font-size: 30px">
+        <label>Orders delivered: </label>
+        <label th:text="${{delivered}+' orders delivered today'}"> </label>
+    </div>
+
+
+
     <div class="row" style="margin-top:10px">
         <a href="/order/" class="btn btn-default" style="color:#337ab7">Back to orders list</a>
     </div>
