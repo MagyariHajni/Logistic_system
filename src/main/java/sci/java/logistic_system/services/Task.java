@@ -26,6 +26,7 @@ public class Task implements Runnable {
         deliveryDriverNumber = Thread.currentThread().getName().substring(Thread.currentThread().getName().length() - 1);
 
         System.out.println("Delivery driver nr " + deliveryDriverNumber + " started deliveries for " + destination.getDestinationName());
+
         try {
             Thread.sleep(1000L * destination.getDistance());
         } catch (InterruptedException e) {

@@ -1,5 +1,7 @@
 package sci.java.logistic_system.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
@@ -22,6 +24,7 @@ public class GlobalData {
     Map<LocalDate, AtomicInteger> profitByDayMap = Collections.synchronizedMap(new HashMap<>());
     Map<LocalDate, AtomicInteger> deliveriesByDayMap = Collections.synchronizedMap(new HashMap<>());
 
+    public static Logger logger = LoggerFactory.getLogger(GlobalData.class);
 
     public LocalDateTime getCurrentDate() {
         return currentDate;
@@ -48,6 +51,9 @@ public class GlobalData {
     }
 
     public void setCommonModelAttributes(Model model) {
+
+        logger.info("common model data set");
+
         model.addAttribute("selectedlist", new ThymeleafBindingObject());
         model.addAttribute("orders", getCurrentViewOrderList());
         model.addAttribute("currentdate", getCurrentDate().toLocalDate());

@@ -260,6 +260,7 @@ public class OrderController {
                                 Model model) {
 
         LocalDateTime dateToShip;
+
         if (!Objects.isNull(date)) {
             dateToShip = date;
         } else {
@@ -269,15 +270,18 @@ public class OrderController {
         List<DeliveryOrderEntity> shippingList = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
 
         List<DeliveryOrderEntity> undelivered = shippingList.stream()
-                .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateToShip.toLocalDate().minusDays(1)))
+                .filter(order -> order.getDeliveryDate().toLocalDate().isBefore(dateToShip.toLocalDate()))
                 .filter(order -> order.getOrderStatus().equals(OrderStatus.NEW)).collect(Collectors.toList());
+
         Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
 
         if (undelivered.isEmpty()) {
             shippingList = shippingList.stream()
                     .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateToShip.toLocalDate()))
                     .filter(order -> order.getOrderStatus().equals(OrderStatus.NEW)).collect(Collectors.toList());
+
             shippingList.forEach(order -> order.setOrderStatus(OrderStatus.DELIVERING));
+
             shippingList.forEach(order -> deliveryOrderService.modifyOrderDetails(order, dateToShip));
 
             mapByDestination = deliveryOrderService.mapByDestination(shippingList);

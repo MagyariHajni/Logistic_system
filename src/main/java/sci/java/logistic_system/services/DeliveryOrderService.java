@@ -256,8 +256,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
         for (DeliveryOrderEntity order : ordersToDeliver) {
             order = getDeliveryOrderRepository().findById(order.getId()).get();
+
             if (order.getOrderStatus() != OrderStatus.CANCELED) {
                 order.setOrderStatus(OrderStatus.DELIVERED);
+
                 modifyOrderDetails(order, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
                 updateGlobalMaps(date, order);
             }
@@ -265,6 +267,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     private void updateGlobalMaps(LocalDateTime date, DeliveryOrderEntity order) {
+
         if (!globalData.getProfitByDayMap().containsKey(date.toLocalDate())) {
             globalData.getProfitByDayMap().put(date.toLocalDate(), new AtomicInteger());
             globalData.getDeliveriesByDayMap().put(date.toLocalDate(), new AtomicInteger());
