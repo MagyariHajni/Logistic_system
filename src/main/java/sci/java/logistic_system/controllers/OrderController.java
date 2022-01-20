@@ -164,7 +164,7 @@ public class OrderController {
     public String editOrder(@PathVariable Integer id, Model model) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.trace("Editing order nr " + id + ", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
-
+//TODO daca dau edit pe URL nu pot da nici back nici submit, eroare
         model.addAttribute("order", deliveryOrderRepository.findById(id).isPresent() ? deliveryOrderRepository.findById(id).get() : null);
         model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
         globalData.setCommonModelAttributes(model);
