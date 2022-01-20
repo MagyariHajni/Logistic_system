@@ -29,17 +29,14 @@ public class DestinationController {
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
-
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
-
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
-
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
@@ -86,11 +83,14 @@ public class DestinationController {
             String newDestinationName = destination.getDestinationName().substring(0, 1).toUpperCase()
                     + destination.getDestinationName().substring(1).toLowerCase();
             if (destinationNameList.contains(newDestinationName)) {
-                if (destinationRepository.findById(destination.getId()).get().getDistance() != destination.getDistance()) {
+                DestinationEntity foundDestination = destinationRepository.findDestinationEntityByDestinationName(newDestinationName);
+                if (Objects.isNull(foundDestination)) {
                     destinationRepository.save(destination);
                     return "redirect:/destinations/" + destination.getId();
                 } else {
-//    TODO log+file destination was not saved because it already exists
+                    foundDestination.setDistance(destination.getDistance());
+                    destinationRepository.save(foundDestination);
+//    TODO log+file destination name already exists, was modified
                     return "redirect:/destinations/";
                 }
             } else {
@@ -117,7 +117,7 @@ public class DestinationController {
                 deliveryOrderService.deleteOrderDestination(order, globalData.getCurrentDate());
             }
         } else {
-//            TODO log+file destination couldn't be delete, not in the repository
+//            TODO log+file destination couldn't be deleted, not in the repository
         }
         List<DeliveryOrderEntity> updatedCurrentView
                 = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());

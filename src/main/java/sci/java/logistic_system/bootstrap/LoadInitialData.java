@@ -18,7 +18,6 @@ public class LoadInitialData implements ApplicationListener<ContextRefreshedEven
     public void setDestinationService(DestinationService destinationService) {
         this.destinationService = destinationService;
     }
-
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;

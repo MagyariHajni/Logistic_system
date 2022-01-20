@@ -18,7 +18,6 @@ public class Executor {
 
     public void startShipping(Map<DestinationEntity, List<DeliveryOrderEntity>> shippingMap, LocalDateTime date, DeliveryOrderService deliveryOrderService) {
         for (DestinationEntity destination : shippingMap.keySet()) {
-//            System.out.println(executor.getQueue().size());
             executor.execute(new Task(shippingMap.get(destination), destination, deliveryOrderService, date));
         }
     }

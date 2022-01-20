@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration xmlns:xi="http://www.w3.org/2001/XInclude">
+    <Appenders>
+
+        <Console name="Console" target="SYSTEM_OUT" follow="true">
+            <PatternLayout disableAnsi="false"
+                    pattern="%style{%d{dd-MM-yyyy HH:mm:ss}}{black} %highlight{%-5level}[%style{%t}{bright,blue}] %style{%C{1}}{normal,cyan}: %msg%n%throwable" />
+        </Console>
+
+        <RollingFile name="RollingFile"
+                     fileName="./logs/logistic-system.log"
+                     filePattern="./logs/$${date:yyyy-MM}/logistic-system-%d{-dd-MMMM-yyyy}-%i.log.gz">
+            <PatternLayout>
+                <pattern>%d{dd-MM-yyyy HH:mm:ss} %p [%t] %C{1}  %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy
+                        size="10 MB" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+        </RollingFile>
+
+    </Appenders>
+
+    <listener>
+        <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+    </listener>
+
+    <Loggers>
+
+        <Logger name="sci.java" additivity="false" level="trace" >
+            <AppenderRef ref="RollingFile" level="info"/>
+            <AppenderRef ref="Console"  />
+        </Logger>
+
+        <Root level="info">
+            <AppenderRef ref="Console" />
+        </Root>
+
+    </Loggers>
+
+</Configuration>

@@ -2,7 +2,6 @@ package sci.java.logistic_system.config;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
-import sci.java.logistic_system.domain.OrderStatus;
 
 import java.time.LocalDateTime;
 

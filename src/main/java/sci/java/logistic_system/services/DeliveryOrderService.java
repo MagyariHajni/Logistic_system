@@ -1,5 +1,7 @@
 package sci.java.logistic_system.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     private DestinationRepository destinationRepository;
     private OrderStatusRepository orderStatusRepository;
     private GlobalData globalData;
+
+    public static Logger logger = LoggerFactory.getLogger(GlobalData.class);
 
     @Autowired
     public void setGlobalData(GlobalData globalData) {
@@ -255,7 +259,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     public synchronized void updateGlobalData(List<DeliveryOrderEntity> ordersToDeliver, LocalDateTime date) {
 
         for (DeliveryOrderEntity order : ordersToDeliver) {
-            order = getDeliveryOrderRepository().findById(order.getId()).get();
+            order = deliveryOrderRepository.findById(order.getId()).get();
 
             if (order.getOrderStatus() != OrderStatus.CANCELED) {
                 order.setOrderStatus(OrderStatus.DELIVERED);
@@ -264,6 +268,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                 updateGlobalMaps(date, order);
             }
         }
+
+        logger.trace("Updated global data for deliveries to "
+                + ordersToDeliver.stream().findFirst().get().getOrderDestination().getDestinationName()
+                + " on " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
     }
 
     private void updateGlobalMaps(LocalDateTime date, DeliveryOrderEntity order) {
