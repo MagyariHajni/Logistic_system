@@ -41,22 +41,27 @@ public class OrderController {
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
+
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
+
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
+
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
     }
+
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
     }
+
     @Autowired
     public void setExecutor(Executor executor) {
         this.executor = executor;
@@ -251,16 +256,19 @@ public class OrderController {
 
     @GetMapping("order/add")
     public String addOrders(@RequestParam(required = false) Map<String, String> orders,
-                            @RequestParam(required = false) Integer number, Model model) {
+                            @RequestParam(required = false) String number, Model model) {
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 
         globalData.setCommonModelAttributes(model);
         ThymeleafBindingObject thymeleafBindingObject = new ThymeleafBindingObject();
-
-        if ((Objects.isNull(number)) || number == 0) {
-            number = 1;
+        int intNumber = 1;
+        try {
+            intNumber = Integer.parseInt(number);
+        } catch (Exception e) {
+            logger.info("Invalid number, number of orders to add set to 1 by default");
         }
+
         if (!Objects.isNull(orders)) {
             orders.remove("number");
         }
@@ -296,7 +304,7 @@ public class OrderController {
             return "orders/addedorders";
         } else {
             logger.info("Submitting orders to add by form");
-            for (int i = 0; i < number; i++) {
+            for (int i = 0; i < intNumber; i++) {
                 thymeleafBindingObject.addDeliveryOrderData(new DeliveryOrderData());
             }
             model.addAttribute("listofneworders", thymeleafBindingObject);

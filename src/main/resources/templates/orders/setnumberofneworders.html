@@ -25,7 +25,7 @@
     <form  th:object="${numberofneworders}" th:action="@{/order/addorder}" method="post">
     <div class="form-group">
         <label style="font-size: 20px;display: inline">Set the number of new orders to add:</label>
-        <input type="text" style="display: inline-block;width: 50px" th:field="*{numberOfOrders}"/>
+        <input type="number" style="display: inline-block;width: 50px" th:field="*{numberOfOrders}"/>
         <button type="submit" class="btn btn-default" style="color:#337ab7;width: 50px; height: 30px; padding: 3px;color:#337ab7">Set</button>
 
     </div>
