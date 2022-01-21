@@ -56,7 +56,6 @@ public class SorterController {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.trace("Sort order by id, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
-
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
@@ -95,6 +94,7 @@ public class SorterController {
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.trace("Sort order by status, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
@@ -188,11 +188,11 @@ public class SorterController {
     private List<?> sortList(String sortDir, Model model, List<?> sortedList) {
         if (Objects.isNull(sortDir) || sortDir.isEmpty() || sortDir.equalsIgnoreCase("asc")) {
             model.addAttribute("sortDir", "desc");
-            logger.info("Descending sort was applied");
+            logger.trace("Descending sort was applied");
 
         } else {
             if (sortDir.equalsIgnoreCase("desc")) {
-                logger.info("Ascending sort was applied");
+                logger.trace("Ascending sort was applied");
                 Collections.reverse(sortedList);
                 model.addAttribute("sortDir", "asc");
             } else {

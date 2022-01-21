@@ -35,14 +35,17 @@ public class DestinationController {
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
+
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
+
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
+
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
@@ -84,7 +87,7 @@ public class DestinationController {
     @GetMapping("destinations/add")
     public String addDestination(Model model) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        logger.info("Submitted destinations to add by form, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        logger.info("Submitted destination to add by form, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
         model.addAttribute("destination", new DestinationEntity());
         return "destination/destinationform";
     }
@@ -96,25 +99,29 @@ public class DestinationController {
         if ((!Objects.equals(destination.getDestinationName(), "")) && (!Objects.equals(destination.getDistance(), 0))) {
             String newDestinationName = destination.getDestinationName().substring(0, 1).toUpperCase()
                     + destination.getDestinationName().substring(1).toLowerCase();
+
             if (destinationNameList.contains(newDestinationName)) {
                 DestinationEntity foundDestination = destinationRepository.findDestinationEntityByDestinationName(newDestinationName);
                 if (Objects.isNull(foundDestination)) {
+                    logger.info("Destination to " + destination.getDestinationName() + ", at " + destination.getDistance() + "km, successfully saved");
                     destinationRepository.save(destination);
-                 //TODO  logger.info("")>nu imi dau seama aici ce salveaza sa pot loga mesajul
-                    return "redirect:/destinations/" + destination.getId();
                 } else {
+                    logger.info("Destination already exists, distance was modified from "
+                            + foundDestination.getDistance() + "km to " + destination.getDistance() + "km");
                     foundDestination.setDistance(destination.getDistance());
                     destinationRepository.save(foundDestination);
-                    logger.info("File destination name already exists, was modified");
-                    return "redirect:/destinations/";
                 }
             } else {
+                if (!Objects.isNull(destination.getId())) {
+                    logger.info("Destination name modified from " + destination.getDestinationName() + " to " + newDestinationName);
+                } else {
+                    logger.info("Destination to " + destination.getDestinationName() + ", at " + destination.getDistance() + "km, successfully saved");
+                }
                 destinationRepository.save(destination);
-                logger.info("Save the new destination "+ destination.getDestinationName());
-                return "redirect:/destinations/" + destination.getId();
             }
+            return "redirect:/destinations/" + destination.getId();
         } else {
-            logger.info("File destination couldn't be saved because not all data was given");
+            logger.info("Destination couldn't be saved, because not all data was given");
             //TODO aici da eroare daca lasi km blank
             return "redirect:/destinations/";
         }
@@ -123,28 +130,26 @@ public class DestinationController {
 
     @GetMapping("destinations/delete/{id}")
     public String deleteDestination(@PathVariable Integer id) {
-//
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        logger.info("Destinations to be deleted with the id " + id + " accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        logger.info("Destination to be deleted with the id " + id + " accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
         Optional<DestinationEntity> destinationToDelete = destinationRepository.findById(id);
         if (destinationToDelete.isPresent()) {
-          logger.info("The destination asked is deleted");
+            logger.info("Destination " + destinationToDelete.get().getDestinationName() +" was successfully deleted");
             List<DeliveryOrderEntity> allOrders = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
             List<DeliveryOrderEntity> ordersWithDestinationToDelete = allOrders.stream()
                     .filter(o1 -> Objects.equals(o1.getOrderDestination(), destinationToDelete.get()))
                     .collect(Collectors.toList());
-
             for (DeliveryOrderEntity order : ordersWithDestinationToDelete) {
                 deliveryOrderService.deleteOrderDestination(order, globalData.getCurrentDate());
             }
         } else {
-           logger.info("File destination couldn't be deleted, not in the repository");
+            logger.info("Destination couldn't be deleted, not in the repository");
 
         }
+
         List<DeliveryOrderEntity> updatedCurrentView
                 = deliveryOrderService.updateView((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), globalData.getCurrentViewOrderList());
         globalData.setCurrentViewOrderList(updatedCurrentView);
-        logger.info("New list of destinations listed");
         destinationRepository.deleteById(id);
         return "redirect:/destinations/";
     }

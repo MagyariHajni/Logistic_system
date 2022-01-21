@@ -155,7 +155,7 @@ public class OrderController {
     @GetMapping("order/edit/{id}")
     public String editOrder(@PathVariable Integer id, Model model) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        logger.trace("Editing order nr " + id + ", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        logger.trace("Submitted order nr " + id + " for editing, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 //TODO daca dau edit pe URL nu pot da nici back nici submit, eroare
         model.addAttribute("order", deliveryOrderRepository.findById(id).isPresent() ? deliveryOrderRepository.findById(id).get() : null);
         model.addAttribute("destinations", destinationRepository.getAvailableDestinations());
@@ -166,7 +166,7 @@ public class OrderController {
     @PostMapping(value = "/order")
     public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order, Model model) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        logger.info("Submitted order nr " + order.getId() + " for editing, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        logger.info("Editing order nr " + order.getId() + ", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
         if (order.getDeliveryDate().isBefore(globalData.getCurrentDate())) {
             logger.info("Order number: " + order.getId() + " was not modified, delivery date must be after current date");
