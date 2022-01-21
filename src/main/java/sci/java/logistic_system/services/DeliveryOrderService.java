@@ -54,34 +54,42 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         this.orderStatusRepository = orderStatusRepository;
     }
 
-    public DeliveryOrderRepository getDeliveryOrderRepository() {
-        return deliveryOrderRepository;
-    }
-
     public void loadInitialOrders() {
         Path fileIn = new File("src/main/resources/orders.csv").toPath();
-
+        int i = 0;
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
             String line;
             while ((line = reader.readLine()) != null) {
+                i++;
                 convertAndSaveOrder(line, LocalDateTime.of(2021, 12, 15, 8, 0));
             }
         } catch (Exception e) {
+            logger.warn("Error found in initial data at line: " + i);
             e.printStackTrace();
         }
     }
 
     public void deleteOrderDestination(DeliveryOrderEntity order, LocalDateTime date) {
         String deletedDestinationName = order.getOrderDestination().getDestinationName();
-        DeliveryOrderEntity orderPreviousData = deliveryOrderRepository.findById(order.getId()).get();
-        order.setOrderDestination(null);
-        modifyOrderDetails(order, orderPreviousData, date, deletedDestinationName);
 
+        Optional<DeliveryOrderEntity> orderPreviousData = deliveryOrderRepository.findById(order.getId());
+        if (orderPreviousData.isPresent()) {
+            order.setOrderDestination(null);
+            modifyOrderDetails(order, orderPreviousData.get(), date, deletedDestinationName);
+        } else {
+            logger.warn("Order number: " + order.getId() + " was deleted from database");
+        }
     }
 
     public void modifyOrderDetails(DeliveryOrderEntity order, LocalDateTime date) {
-        DeliveryOrderEntity orderPreviousData = deliveryOrderRepository.findById(order.getId()).get();
-        modifyOrderDetails(order, orderPreviousData, date, "");
+
+        Optional<DeliveryOrderEntity> orderPreviousData = deliveryOrderRepository.findById(order.getId());
+        if (orderPreviousData.isPresent()) {
+            modifyOrderDetails(order, orderPreviousData.get(), date, "");
+        } else {
+            logger.warn("Order number: " + order.getId() + " was deleted from database");
+        }
+
     }
 
     public void modifyOrderDetails(DeliveryOrderEntity order, DeliveryOrderEntity orderPreviousData, LocalDateTime date, String deletedDestinationName) {
@@ -131,6 +139,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
         order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
         orderStatusRepository.addOrderStatus(order.getId(), order.getOrderStatus(), order.getLastUpDated());
+
         if (Objects.equals(order.getDestinationComment(), "")) {
             order.setDestinationComment(orderPreviousData.getDestinationComment());
         }
@@ -138,10 +147,12 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
     public void cancelSelectedOrders(List<DeliveryOrderEntity> ordersToCancel, LocalDateTime date) {
         for (DeliveryOrderEntity order : ordersToCancel) {
-            order.setOrderStatus(OrderStatus.CANCELED);
-            order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
-            deliveryOrderRepository.save(order);
-            orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.CANCELED, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+            if (order.getOrderStatus() != OrderStatus.DELIVERED) {
+                order.setOrderStatus(OrderStatus.CANCELED);
+                order.setLastUpDated(LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+                deliveryOrderRepository.save(order);
+                orderStatusRepository.addOrderStatus(order.getId(), OrderStatus.CANCELED, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+            }
         }
     }
 
@@ -194,12 +205,10 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
 
     public List<DeliveryOrderEntity> filterOrdersByDate(List<DeliveryOrderEntity> orderListToFilter, LocalDateTime date) {
         if (!(Objects.isNull(date))) {
-            if (true) {//only works for valid date inputs
-                LocalDate dateDate = date.toLocalDate();
-                orderListToFilter = orderListToFilter.stream()
-                        .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateDate))
-                        .collect(Collectors.toList());
-            }
+            LocalDate dateDate = date.toLocalDate();
+            orderListToFilter = orderListToFilter.stream()
+                    .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateDate))
+                    .collect(Collectors.toList());
         }
         return orderListToFilter;
     }
@@ -231,12 +240,16 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         return orderListToFilter;
     }
 
-
     public List<DeliveryOrderEntity> updateView(List<DeliveryOrderEntity> allOrders, List<DeliveryOrderEntity> listToCheck) {
         List<DeliveryOrderEntity> updatedList = new ArrayList<>();
         for (DeliveryOrderEntity order : listToCheck) {
             if (!allOrders.contains(order)) {
-                order = deliveryOrderRepository.findById(order.getId()).get();
+                Optional<DeliveryOrderEntity> foundOrder = deliveryOrderRepository.findById(order.getId());
+                if (foundOrder.isPresent()) {
+                    order = foundOrder.get();
+                } else {
+                    logger.warn("Order number: " + order.getId() + " was deleted from database");
+                }
             }
             updatedList.add(order);
         }
@@ -244,7 +257,6 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     public Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination(List<DeliveryOrderEntity> listToMap) {
-
         Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
         for (DeliveryOrderEntity order : listToMap) {
             if (!mapByDestination.containsKey(order.getOrderDestination())) {
@@ -256,26 +268,28 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
     }
 
     @Async
-    public synchronized void updateGlobalData(List<DeliveryOrderEntity> ordersToDeliver, LocalDateTime date) {
-
+    public synchronized void updateGlobalData(String destinationName, List<DeliveryOrderEntity> ordersToDeliver, LocalDateTime date) {
         for (DeliveryOrderEntity order : ordersToDeliver) {
-            order = deliveryOrderRepository.findById(order.getId()).get();
-
-            if (order.getOrderStatus() != OrderStatus.CANCELED) {
-                order.setOrderStatus(OrderStatus.DELIVERED);
-
-                modifyOrderDetails(order, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
-                updateGlobalMaps(date, order);
+            Optional<DeliveryOrderEntity> foundOrder = deliveryOrderRepository.findById(order.getId());
+            if (foundOrder.isPresent()) {
+                order = foundOrder.get();
+                if (order.getOrderStatus() != OrderStatus.CANCELED) {
+                    order.setOrderStatus(OrderStatus.DELIVERED);
+                    modifyOrderDetails(order, LocalDateTime.of(date.toLocalDate(), LocalTime.now()));
+                    updateGlobalMaps(date, order);
+                } else {
+                    logger.info("Order number: " + order.getId() + " was canceled after deliveries started, no profit");
+                }
+            } else {
+                logger.warn("Order number: " + order.getId() + " was deleted from database, no profit");
             }
         }
 
         logger.trace("Updated global data for deliveries to "
-                + ordersToDeliver.stream().findFirst().get().getOrderDestination().getDestinationName()
-                + " on " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                + destinationName + " on " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
     }
 
     private void updateGlobalMaps(LocalDateTime date, DeliveryOrderEntity order) {
-
         if (!globalData.getProfitByDayMap().containsKey(date.toLocalDate())) {
             globalData.getProfitByDayMap().put(date.toLocalDate(), new AtomicInteger());
             globalData.getDeliveriesByDayMap().put(date.toLocalDate(), new AtomicInteger());

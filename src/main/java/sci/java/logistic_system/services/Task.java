@@ -39,10 +39,10 @@ public class Task implements Runnable {
             e.printStackTrace();
         }
         logger.info("Delivery driver nr " + deliveryDriverNumber
-                + " completed " + + ordersToDeliver.size()
+                + " completed " + ordersToDeliver.size()
                 + " deliveries for " + destination.getDestinationName());
 
-        deliveryOrderService.updateGlobalData(ordersToDeliver,date);
+        deliveryOrderService.updateGlobalData(destination.getDestinationName(),ordersToDeliver,date);
     }
 
 }

@@ -79,7 +79,7 @@ public class DestinationController {
     public String saveOrUpdateDestination(DestinationEntity destination) {
         List<String> destinationNameList = destinationRepository.getAvailableDestinations();
 
-        if ((!Objects.equals(destination.getDestinationName(), "")) && (!Objects.equals(destination.getDistance(), ""))) {
+        if ((!Objects.equals(destination.getDestinationName(), "")) && (!Objects.equals(destination.getDistance(), 0))) {
             String newDestinationName = destination.getDestinationName().substring(0, 1).toUpperCase()
                     + destination.getDestinationName().substring(1).toLowerCase();
             if (destinationNameList.contains(newDestinationName)) {

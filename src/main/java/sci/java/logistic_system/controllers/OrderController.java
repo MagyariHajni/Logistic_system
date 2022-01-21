@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 
 @Controller
 public class OrderController {
+    public static Logger logger = LoggerFactory.getLogger(GlobalData.class);
+
     private DeliveryOrderRepository deliveryOrderRepository;
     private DestinationRepository destinationRepository;
     private OrderStatusRepository orderStatusRepository;
@@ -34,33 +36,27 @@ public class OrderController {
     private DeliveryOrderService deliveryOrderService;
     private Executor executor;
 
-    public static Logger logger = LoggerFactory.getLogger(GlobalData.class);
 
     @Autowired
     public void setGlobalData(GlobalData globalData) {
         this.globalData = globalData;
     }
-
     @Autowired
     public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
         this.deliveryOrderRepository = deliveryOrderRepository;
     }
-
     @Autowired
     public void setDestinationRepository(DestinationRepository destinationRepository) {
         this.destinationRepository = destinationRepository;
     }
-
     @Autowired
     public void setOrderStatusRepository(OrderStatusRepository orderStatusRepository) {
         this.orderStatusRepository = orderStatusRepository;
     }
-
     @Autowired
     public void setDeliveryOrderService(DeliveryOrderService deliveryOrderService) {
         this.deliveryOrderService = deliveryOrderService;
     }
-
     @Autowired
     public void setExecutor(Executor executor) {
         this.executor = executor;
@@ -69,7 +65,6 @@ public class OrderController {
 
     @GetMapping(value = "order/")
     public String allOrders(Model model) {
-
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.trace("Viewing all orders, accessed: " + request.getRequestURL());
 
@@ -81,7 +76,6 @@ public class OrderController {
     @GetMapping(value = "order/list")
     public String listOrders(@RequestParam(required = false) LocalDateTime date,
                              Model model) {
-
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         StringBuffer url = Objects.isNull(date) ? request.getRequestURL() : request.getRequestURL().append('?').append(request.getQueryString());
         logger.trace("Filtering list by given date (if given), accessed: " + url);
@@ -100,7 +94,6 @@ public class OrderController {
             @RequestParam(required = false) LocalDateTime date,
             @RequestParam(required = false) String destination,
             Model model) {
-
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.trace("Filtering list by given date and destination (if given), accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
@@ -120,7 +113,6 @@ public class OrderController {
             @RequestParam(required = false) String destination,
             @RequestParam(required = false) String status,
             Model model) {
-
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.trace("Filtering list by given date and/or destination and/or status (if given), accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
@@ -173,30 +165,35 @@ public class OrderController {
 
     @PostMapping(value = "/order")
     public String updateOrder(@ModelAttribute("order") DeliveryOrderEntity order, Model model) {
-
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logger.info("Submitted order nr " + order.getId() + " for editing, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
         if (order.getDeliveryDate().isBefore(globalData.getCurrentDate())) {
             logger.info("Order number: " + order.getId() + " was not modified, delivery date must be after current date");
-        } else if ((deliveryOrderRepository.findById(order.getId()).get().equals(order))) {
-            logger.info("Order number: " + order.getId() + " was not be modified, no information was changed");
         } else {
-            deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
-            logger.info("Order number: " + order.getId() + " was successfully modified today: " + globalData.getCurrentDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+            Optional<DeliveryOrderEntity> foundOrder = deliveryOrderRepository.findById(order.getId());
+            if (foundOrder.isPresent()) {
+                if ((foundOrder.get().equals(order))) {
+                    logger.info("Order number: " + order.getId() + " was not modified, no information was changed");
+                } else {
+                    deliveryOrderService.modifyOrderDetails(order, globalData.getCurrentDate());
+                    logger.info("Order number: " + order.getId()
+                            + " was successfully modified today: "
+                            + globalData.getCurrentDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                }
+            } else {
+                logger.warn("Order number: " + order.getId() + " was deleted from database");
+            }
         }
-
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
         return "redirect:order/" + order.getId();
     }
 
-
     @RequestMapping(value = "/order/cancel", method = {RequestMethod.GET, RequestMethod.POST})
     public String cancelOrders(@RequestParam(required = false) List<String> orders,
                                @ModelAttribute("selectedlist") ThymeleafBindingObject selectedOrders, Model model) {
-
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        logger.info("Submitted orders to cancel, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        logger.info("Submitting orders to cancel, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
         List<DeliveryOrderEntity> ordersToCancel = new ArrayList<>();
         Optional<DeliveryOrderEntity> foundOrder;
@@ -206,21 +203,24 @@ public class OrderController {
             for (String id : orders) {
                 foundOrder = deliveryOrderRepository.findById(Integer.valueOf(id));
                 if (foundOrder.isPresent()) {
-                    if ((foundOrder.get().getOrderStatus() != OrderStatus.CANCELED) && (foundOrder.get().getOrderStatus() != OrderStatus.DELIVERED))
-                        ordersToCancel.add(deliveryOrderRepository.findById(Integer.valueOf(id)).get());
+                    if ((foundOrder.get().getOrderStatus() != OrderStatus.CANCELED) && (foundOrder.get().getOrderStatus() != OrderStatus.DELIVERED)) {
+                        Optional<DeliveryOrderEntity> orderToCancel = deliveryOrderRepository.findById(Integer.valueOf(id));
+                        orderToCancel.ifPresent(ordersToCancel::add);
+                    }
                 }
             }
         } else {
             if (!Objects.isNull(selectedOrders) && !Objects.isNull(selectedOrders.getListOfOrders())) {
                 logger.info("Submitted orders to cancel by form: "
-                        + selectedOrders.getListOfOrders().stream().map(order -> order.getId().toString() + "   ").reduce("", String::concat));
+                        + selectedOrders.getListOfOrders().stream().reduce("", (all, order) -> all + order.getId() + "   ", String::concat));
+
                 ordersToCancel = selectedOrders.getListOfOrders().stream()
                         .filter(order -> (order.getOrderStatus() != OrderStatus.CANCELED) && (order.getOrderStatus() != OrderStatus.DELIVERED))
                         .collect(Collectors.toList());
             }
         }
 
-        if(ordersToCancel.isEmpty()) {
+        if (ordersToCancel.isEmpty()) {
             logger.info("No available orders selected to cancel");
         }
 
@@ -243,9 +243,10 @@ public class OrderController {
     @PostMapping(value = "/order/addorder")
     public String setNumberOfOrdersToAdd(@ModelAttribute("numberofneworders") ThymeleafBindingObject number) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        logger.info("Number of orders to add set to " + number.getNumberOfOrders() + ", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        int numberOfOrdersToAdd = number.getNumberOfOrders() == 0 ? 1 : number.getNumberOfOrders();
+        logger.info("Number of orders to add set to " + numberOfOrdersToAdd + ", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
-        return "redirect:/order/add?number=" + number.getNumberOfOrders();
+        return "redirect:/order/add?number=" + numberOfOrdersToAdd;
     }
 
     @GetMapping("order/add")
@@ -265,22 +266,21 @@ public class OrderController {
         }
 
         if (!Objects.isNull(orders) && !orders.isEmpty()) {
-            logger.info("Submitted orders to add by url, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+            logger.info("Submitting orders to add by url, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
             List<DeliveryOrderEntity> savedOrdersList = new ArrayList<>();
             DeliveryOrderEntity savedOrder;
 
             for (String destinationName : orders.keySet()) {
-
                 String originalName = destinationName;
                 destinationName = destinationName.substring(0, 1).toUpperCase() + destinationName.substring(1).toLowerCase();
                 DestinationEntity destination = destinationRepository.findDestinationEntityByDestinationName(destinationName);
 
                 if (!Objects.isNull(destination)) {
-                    logger.info("Destination" + destinationName + " is not available, order not saved");
                     savedOrder = addAndSaveOrder(destination, orders.get(originalName));
-
                     if (!Objects.isNull(savedOrder)) {
-                        logger.info("Order to " + destinationName + " for delivery on" + savedOrder.getDeliveryDate() + " successfully saved");
+                        logger.info("Order to " + destinationName + " for delivery on "
+                                + savedOrder.getDeliveryDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                                + " successfully saved");
                         savedOrdersList.add(savedOrder);
                     }
                 } else {
@@ -288,14 +288,14 @@ public class OrderController {
                 }
             }
 
-            if(savedOrdersList.isEmpty()) {
+            if (savedOrdersList.isEmpty()) {
                 logger.info("No valid data given to save");
             }
 
             model.addAttribute("addedorders", savedOrdersList);
             return "orders/addedorders";
         } else {
-            logger.info("Submitted orders to add by form");
+            logger.info("Submitting orders to add by form");
             for (int i = 0; i < number; i++) {
                 thymeleafBindingObject.addDeliveryOrderData(new DeliveryOrderData());
             }
@@ -323,7 +323,7 @@ public class OrderController {
             }
         }
 
-        if(savedOrdersList.isEmpty()) {
+        if (savedOrdersList.isEmpty()) {
             logger.info("No valid data given to save");
         }
 
@@ -345,8 +345,8 @@ public class OrderController {
         } else {
             dateToShip = globalData.getCurrentDate().plusDays(1);
         }
-        logger.info("Shipping orders on "+ dateToShip.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                +", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+        logger.info("Prepare shipping on " + dateToShip.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                + ", accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
 
         List<DeliveryOrderEntity> shippingList = (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll();
 
@@ -357,23 +357,22 @@ public class OrderController {
         Map<DestinationEntity, List<DeliveryOrderEntity>> mapByDestination = new HashMap<>();
 
         if (undelivered.isEmpty()) {
-
             shippingList = shippingList.stream()
                     .filter(order -> order.getDeliveryDate().toLocalDate().equals(dateToShip.toLocalDate()))
                     .filter(order -> order.getOrderStatus().equals(OrderStatus.NEW)).collect(Collectors.toList());
 
             shippingList.forEach(order -> order.setOrderStatus(OrderStatus.DELIVERING));
-
             shippingList.forEach(order -> deliveryOrderService.modifyOrderDetails(order, dateToShip));
+
             mapByDestination = deliveryOrderService.mapByDestination(shippingList);
 
-            logger.info("Started shipping on "+ dateToShip.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                    +" deliveries to: " + mapByDestination.keySet().stream().map(destination -> destination.getDestinationName() + "   ").reduce("",String::concat));
+            logger.info("Started shipping on " + dateToShip.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                    + " deliveries to: " + mapByDestination.keySet().stream().map(destination -> destination.getDestinationName() + "   ").reduce("", String::concat));
 
             startShipping(mapByDestination, dateToShip);
         } else {
-            logger.warn("Shipping orders on "+ dateToShip.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                    +" not possible, undelivered orders from previous dates, ship or cancel them");
+            logger.warn("Shipping orders on " + dateToShip.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                    + " not possible, undelivered orders from previous dates, ship or cancel them");
         }
 
         model.addAttribute("undelivered", undelivered);
@@ -391,7 +390,7 @@ public class OrderController {
         LocalDate untilDate = null;
         int profit = 0;
 
-        if(!Objects.isNull(until)){
+        if (!Objects.isNull(until)) {
             try {
                 String[] dateToken = until.split("-");
                 untilDate = LocalDate.of(Integer.parseInt(dateToken[2]),
@@ -400,7 +399,6 @@ public class OrderController {
             } catch (Exception e) {
                 logger.warn("Incorrect data input, data must be of type dd-MM-yyyy");
             }
-
         }
 
         if (Objects.isNull(untilDate)) {
@@ -421,7 +419,6 @@ public class OrderController {
 
     @GetMapping({"/order/next-day"})
     public String newDay(Model model) {
-
         globalData.setCurrentDate(globalData.getCurrentDate().plusDays(1));
         globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         globalData.setCommonModelAttributes(model);
@@ -430,8 +427,6 @@ public class OrderController {
 
     @GetMapping({"/order/previous-day"})
     public String previousDay(Model model) {
-
-
         if (!globalData.getCurrentDate().toLocalDate().minusDays(1).isBefore(LocalDateTime.of(2021, 12, 15, 8, 0).toLocalDate())) {
             globalData.setCurrentDate(globalData.getCurrentDate().minusDays(1));
         }
@@ -466,6 +461,5 @@ public class OrderController {
         }
         return savedOrder;
     }
-
 
 }

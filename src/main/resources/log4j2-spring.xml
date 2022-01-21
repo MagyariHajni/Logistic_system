@@ -11,7 +11,7 @@
                      fileName="./logs/logistic-system.log"
                      filePattern="./logs/$${date:yyyy-MM}/logistic-system-%d{-dd-MMMM-yyyy}-%i.log.gz">
             <PatternLayout>
-                <pattern>%d{dd-MM-yyyy HH:mm:ss} %p [%t] %C{1}  %m%n</pattern>
+                <pattern>%d{dd-MM-yyyy HH:mm:ss} %p [%t] %C{1}:  %m%n</pattern>
             </PatternLayout>
             <Policies>
                 <OnStartupTriggeringPolicy />
