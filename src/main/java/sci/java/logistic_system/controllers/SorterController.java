@@ -1,10 +1,14 @@
 package sci.java.logistic_system.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import sci.java.logistic_system.domain.DeliveryOrderEntity;
 import sci.java.logistic_system.domain.DestinationEntity;
 import sci.java.logistic_system.domain.repository.DeliveryOrderRepository;
@@ -12,6 +16,7 @@ import sci.java.logistic_system.domain.repository.DestinationRepository;
 import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.GlobalData;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +29,8 @@ public class SorterController {
     DestinationRepository destinationRepository;
     DeliveryOrderService deliveryOrderService;
     GlobalData globalData;
+    public static Logger logger = LoggerFactory.getLogger(GlobalData.class);
+
 
     @Autowired
     public void setGlobalData(GlobalData globalData) {
@@ -46,6 +53,9 @@ public class SorterController {
     @RequestMapping({"/order/sort/byid"})
     public String sortOrdersById(@RequestParam(required = false) String sortDir,
                                  Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort order by id, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
 
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
@@ -60,6 +70,9 @@ public class SorterController {
     @RequestMapping({"/order/sort/bydestination"})
     public String sortOrdersByDestination(@RequestParam(required = false) String sortDir,
                                           Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort order by destination, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
 
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
@@ -80,6 +93,8 @@ public class SorterController {
     public String sortOrdersByOrderStatus(@RequestParam(required = false) String sortDir,
                                           Model model) {
 
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort order by status, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
@@ -93,6 +108,9 @@ public class SorterController {
     @RequestMapping({"/order/sort/bydeliverydate"})
     public String sortOrdersByDeliveryDate(@RequestParam(required = false) String sortDir,
                                            Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort order by delivery date, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
@@ -107,6 +125,9 @@ public class SorterController {
     @RequestMapping({"/order/sort/bylastupdated"})
     public String sortOrdersByLastUpdated(@RequestParam(required = false) String sortDir,
                                           Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort order by last updated, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
         globalData.updateAndSetCurrentView(model, globalData.getCurrentViewOrderList(), (List<DeliveryOrderEntity>) deliveryOrderRepository.findAll(), deliveryOrderService);
 
         List<DeliveryOrderEntity> sortedList = globalData.getCurrentViewOrderList().stream()
@@ -119,6 +140,9 @@ public class SorterController {
     @RequestMapping({"/destinations/sort/byid"})
     public String sortDestinationsById(@RequestParam(required = false) String sortDir,
                                        Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort destinations by id, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
         globalData.setCommonModelAttributes(model);
         List<DestinationEntity> destinations = (List<DestinationEntity>) destinationRepository.findAll();
         destinations = destinations.stream()
@@ -132,6 +156,9 @@ public class SorterController {
     @RequestMapping({"/destinations/sort/byname"})
     public String sortDestinationsByName(@RequestParam(required = false) String sortDir,
                                          Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort destinations by name, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
         globalData.setCommonModelAttributes(model);
         List<DestinationEntity> destinations = (List<DestinationEntity>) destinationRepository.findAll();
         destinations = destinations.stream()
@@ -145,6 +172,9 @@ public class SorterController {
     @RequestMapping({"/destinations/sort/bydistance"})
     public String sortDestinationsByDistance(@RequestParam(required = false) String sortDir,
                                              Model model) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logger.trace("Sort destinations by distance, accessed: " + request.getRequestURL().append('?').append(request.getQueryString()));
+
         globalData.setCommonModelAttributes(model);
         List<DestinationEntity> destinations = (List<DestinationEntity>) destinationRepository.findAll();
         destinations = destinations.stream()
@@ -158,12 +188,15 @@ public class SorterController {
     private List<?> sortList(String sortDir, Model model, List<?> sortedList) {
         if (Objects.isNull(sortDir) || sortDir.isEmpty() || sortDir.equalsIgnoreCase("asc")) {
             model.addAttribute("sortDir", "desc");
+            logger.info("Descending sort was applied");
+
         } else {
             if (sortDir.equalsIgnoreCase("desc")) {
+                logger.info("Ascending sort was applied");
                 Collections.reverse(sortedList);
                 model.addAttribute("sortDir", "asc");
             } else {
-//                TODO by default sorting order for invalid input is asc
+                logger.info("By default sorting order for invalid input is asc");
             }
         }
         return sortedList;
