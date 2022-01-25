@@ -6,6 +6,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 import sci.java.logistic_system.services.DeliveryOrderService;
 import sci.java.logistic_system.services.DestinationService;
+import sci.java.logistic_system.services.GlobalData;
 
 
 @Component
@@ -13,6 +14,12 @@ public class LoadInitialData implements ApplicationListener<ContextRefreshedEven
 
     private DestinationService destinationService;
     private DeliveryOrderService deliveryOrderService;
+    private GlobalData globalData;
+
+    @Autowired
+    public void setGlobalData(GlobalData globalData) {
+        this.globalData = globalData;
+    }
 
     @Autowired
     public void setDestinationService(DestinationService destinationService) {
@@ -26,7 +33,8 @@ public class LoadInitialData implements ApplicationListener<ContextRefreshedEven
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         destinationService.loadDestinations();
-        deliveryOrderService.loadInitialOrders();
+        globalData.setCurrentViewOrderList(deliveryOrderService.loadInitialOrders());
+        destinationService.setDestinationRepository(destinationService.getDestinationRepository());
     }
 
 }

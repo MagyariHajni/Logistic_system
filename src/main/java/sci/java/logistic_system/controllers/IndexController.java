@@ -12,28 +12,22 @@ import java.util.List;
 
 @Controller
 public class IndexController {
-    private DeliveryOrderRepository deliveryOrderRepository;
-    private DestinationRepository destinationRepository;
-    private GlobalData globalData;
-
-    @Autowired
-    public void setDestinationRepository(DestinationRepository destinationRepository) {
-        this.destinationRepository = destinationRepository;
-    }
-
-    @Autowired
-    public void setGlobalData(GlobalData globalData) {
-        this.globalData = globalData;
-    }
-
-    @Autowired
-    public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
-        this.deliveryOrderRepository = deliveryOrderRepository;
-    }
+//    private DeliveryOrderRepository deliveryOrderRepository;
+//    private DestinationRepository destinationRepository;
+//
+//
+//    @Autowired
+//    public void setDestinationRepository(DestinationRepository destinationRepository) {
+//        this.destinationRepository = destinationRepository;
+//    }
+//
+//    @Autowired
+//    public void setDeliveryOrderRepository(DeliveryOrderRepository deliveryOrderRepository) {
+//        this.deliveryOrderRepository = deliveryOrderRepository;
+//    }
 
     @RequestMapping("/")
     public String index() {
-        globalData.setCurrentViewOrderList((List<DeliveryOrderEntity>) deliveryOrderRepository.findAll());
         return "index";
     }
 

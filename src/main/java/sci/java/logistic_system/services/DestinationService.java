@@ -38,7 +38,7 @@ public class DestinationService extends AbstractJpaDaoService {
         return destinationRepository;
     }
 
-    public void loadDestinations() {
+    public List<DestinationEntity> loadDestinations() {
         Path fileIn = new File("src/main/resources/destinations.csv").toPath();
 //        System.out.println(fileIn.toAbsolutePath());
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
@@ -49,6 +49,7 @@ public class DestinationService extends AbstractJpaDaoService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return (List<DestinationEntity>) getDestinationRepository().findAll();
     }
 
     public void convertAndSaveDestination(String input) {

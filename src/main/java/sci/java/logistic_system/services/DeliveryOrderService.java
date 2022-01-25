@@ -54,7 +54,11 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
         this.orderStatusRepository = orderStatusRepository;
     }
 
-    public void loadInitialOrders() {
+    public DeliveryOrderRepository getDeliveryOrderRepository() {
+        return deliveryOrderRepository;
+    }
+
+    public List<DeliveryOrderEntity> loadInitialOrders() {
         Path fileIn = new File("src/main/resources/orders.csv").toPath();
         int i = 0;
         try (BufferedReader reader = Files.newBufferedReader(fileIn)) {
@@ -67,6 +71,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
             logger.warn("Error found in initial data at line: " + i);
             e.printStackTrace();
         }
+        return (List<DeliveryOrderEntity>) getDeliveryOrderRepository().findAll();
     }
 
     public void deleteOrderDestination(DeliveryOrderEntity order, LocalDateTime date) {
@@ -223,7 +228,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
                         .collect(Collectors.toList());
             } else {
                 orderListToFilter = new ArrayList<>();
-//                TODO log + file given destination is not an available destination
+                logger.info("Destination: " + destinationName + " is not currently available");
             }
         }
         return orderListToFilter;
@@ -234,7 +239,7 @@ public class DeliveryOrderService extends AbstractJpaDaoService {
             if (Arrays.stream(OrderStatus.values()).anyMatch(orderStatus -> orderStatus.name().equals(statusName.toUpperCase()))) {
                 orderListToFilter = orderListToFilter.stream().filter(order -> order.getOrderStatus().name().equals(statusName.toUpperCase())).collect(Collectors.toList());
             } else {
-//                TODO log+file invalid status value input
+                logger.info("Status: " + statusName + " is not a valid order status");
             }
         }
         return orderListToFilter;
